@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
+import { CharactersStorage } from "@/lib/characters-storage"
 
 interface Character {
   id: string
@@ -41,50 +42,13 @@ export default function CharactersPage() {
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
+    // Inicializar storage
+    CharactersStorage.init()
+
     // Simular carregamento de personagens
     setTimeout(() => {
-      setCharacters([
-        {
-          id: "1",
-          name: "Aragorn",
-          system: "D&D 5e",
-          level: "Nível 5 Ranger",
-          owner: "João Silva",
-          lastModified: "2024-01-15",
-        },
-        {
-          id: "2",
-          name: "Elara Moonwhisper",
-          system: "Tormenta 20",
-          level: "Nível 3 Elfa Druida",
-          owner: "Maria Santos",
-          lastModified: "2024-01-14",
-        },
-        {
-          id: "3",
-          name: "Marcus Blackwood",
-          system: "Call of Cthulhu",
-          level: "Investigador Veterano",
-          owner: "Pedro Costa",
-          lastModified: "2024-01-13",
-        },
-        {
-          id: "4",
-          name: "Zara the Swift",
-          system: "D&D 5e",
-          level: "Nível 7 Ladina",
-          owner: "Ana Oliveira",
-          lastModified: "2024-01-12",
-        },
-        {
-          id: "5",
-          name: "Brother Thomas",
-          system: "Tormenta 20",
-          level: "Nível 4 Clérigo",
-          owner: "Carlos Lima",
-          lastModified: "2024-01-11",
-        },
-      ])
+      const loadedCharacters = CharactersStorage.getAll()
+      setCharacters(loadedCharacters)
       setIsLoading(false)
     }, 1000)
   }, [])
@@ -117,13 +81,20 @@ export default function CharactersPage() {
       // Simular exclusão
       await new Promise((resolve) => setTimeout(resolve, 1500))
 
-      // Remover personagem da lista
-      setCharacters(characters.filter((c) => c.id !== characterToDelete))
+      // Remover do storage
+      const success = CharactersStorage.remove(characterToDelete)
 
-      toast({
-        title: "Personagem excluído",
-        description: "O personagem foi removido com sucesso.",
-      })
+      if (success) {
+        // Atualizar lista local
+        setCharacters(characters.filter((c) => c.id !== characterToDelete))
+
+        toast({
+          title: "Personagem excluído",
+          description: "O personagem foi removido com sucesso.",
+        })
+      } else {
+        throw new Error("Personagem não encontrado")
+      }
     } catch (error) {
       toast({
         title: "Erro ao excluir",
@@ -168,7 +139,7 @@ export default function CharactersPage() {
           <p className="text-gray-600">Gerencie suas fichas de RPG</p>
         </div>
         <Button asChild className="bg-purple-600 hover:bg-purple-700">
-          <Link href="/dashboard/characters/new">
+          <Link href="/dashboard/characters/create">
             <Plus className="mr-2 h-4 w-4" />
             Nova Ficha
           </Link>
@@ -283,7 +254,7 @@ export default function CharactersPage() {
               : "Você ainda não criou nenhum personagem"}
           </p>
           <Button asChild className="bg-purple-600 hover:bg-purple-700">
-            <Link href="/dashboard/characters/new">
+            <Link href="/dashboard/characters/create">
               <Plus className="mr-2 h-4 w-4" />
               Criar Primeira Ficha
             </Link>

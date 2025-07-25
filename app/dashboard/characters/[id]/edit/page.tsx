@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { ArrowLeft, Upload, Loader2, Save } from "lucide-react"
+import { ArrowLeft, Loader2, Save } from "lucide-react"
 import Link from "next/link"
 import { DynamicFormRenderer } from "@/components/forms/dynamic-form-renderer"
+import { CharactersStorage } from "@/lib/characters-storage"
+import { ImageUpload } from "@/components/ui/image-upload"
 
 interface Character {
   id: string
@@ -44,87 +45,133 @@ export default function EditCharacterPage() {
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
+    // Inicializar storage
+    CharactersStorage.init()
+
     // Simular carregamento do personagem
     setTimeout(() => {
-      const characterData = {
-        id: params.id as string,
-        name: "Aragorn",
-        system: "D&D 5e",
-        level: "Nível 5 Ranger",
-        owner: "João Silva",
-        history:
-          "Aragorn é um Dúnadan do Norte, herdeiro de Isildur e legítimo rei de Gondor. Criado em Valfenda pelos elfos, ele se tornou um Ranger experiente, protegendo as terras selvagens. Conhecido como Passolargo, ele guia e protege os hobbits em sua jornada para destruir o Um Anel.",
-        lastModified: "2024-01-15",
-        fields: {
-          atributos: {
-            força: 16,
-            destreza: 14,
-            constituição: 15,
-            inteligência: 12,
-            sabedoria: 15,
-            carisma: 14,
-          },
-          classe: "Ranger",
-          raça: "Humano",
-          nível: 5,
-          pontosDeVida: 58,
-          classeDeArmadura: 16,
-          habilidades: ["Sobrevivência", "Rastreamento", "Furtividade", "Percepção"],
-        },
-      }
+      const loadedCharacter = CharactersStorage.getById(params.id as string)
 
-      setCharacter(characterData)
+      if (loadedCharacter) {
+        setCharacter(loadedCharacter)
 
-      // Simular carregamento do template
-      setTemplate({
-        id: "1",
-        system_name: "D&D 5e",
-        version: "5.0",
-        description: "Sistema clássico de RPG com classes, raças e magias",
-        fields: {
-          atributos: {
-            type: "object",
-            required: true,
-            fields: {
-              força: { type: "number", required: true, min: 1, max: 20 },
-              destreza: { type: "number", required: true, min: 1, max: 20 },
-              constituição: { type: "number", required: true, min: 1, max: 20 },
-              inteligência: { type: "number", required: true, min: 1, max: 20 },
-              sabedoria: { type: "number", required: true, min: 1, max: 20 },
-              carisma: { type: "number", required: true, min: 1, max: 20 },
+        // Simular carregamento do template baseado no sistema
+        let templateFields = {}
+
+        if (loadedCharacter.system === "D&D 5e") {
+          templateFields = {
+            atributos: {
+              type: "object",
+              required: true,
+              fields: {
+                força: { type: "number", required: true, min: 1, max: 20 },
+                destreza: { type: "number", required: true, min: 1, max: 20 },
+                constituição: { type: "number", required: true, min: 1, max: 20 },
+                inteligência: { type: "number", required: true, min: 1, max: 20 },
+                sabedoria: { type: "number", required: true, min: 1, max: 20 },
+                carisma: { type: "number", required: true, min: 1, max: 20 },
+              },
             },
-          },
-          classe: {
-            type: "string",
-            required: true,
-            options: ["Guerreiro", "Mago", "Ladino", "Clérigo", "Ranger", "Bárbaro"],
-          },
-          raça: {
-            type: "string",
-            required: true,
-            options: ["Humano", "Elfo", "Anão", "Halfling", "Meio-elfo", "Meio-orc"],
-          },
-          nível: { type: "number", required: true, min: 1, max: 20 },
-          pontosDeVida: { type: "number", required: true },
-          classeDeArmadura: { type: "number", required: true },
-          habilidades: {
-            type: "list",
-            itemType: "string",
-            options: [
-              "Acrobacia",
-              "Arcanismo",
-              "Atletismo",
-              "Enganação",
-              "História",
-              "Intimidação",
-              "Sobrevivência",
-              "Rastreamento",
-              "Furtividade",
-              "Percepção",
-            ],
-          },
-        },
-      })
+            classe: {
+              type: "string",
+              required: true,
+              options: ["Guerreiro", "Mago", "Ladino", "Clérigo", "Ranger", "Bárbaro"],
+            },
+            raça: {
+              type: "string",
+              required: true,
+              options: ["Humano", "Elfo", "Anão", "Halfling", "Meio-elfo", "Meio-orc"],
+            },
+            nível: { type: "number", required: true, min: 1, max: 20 },
+            pontosDeVida: { type: "number", required: true },
+            classeDeArmadura: { type: "number", required: true },
+            habilidades: {
+              type: "list",
+              itemType: "string",
+              options: [
+                "Acrobacia",
+                "Arcanismo",
+                "Atletismo",
+                "Enganação",
+                "História",
+                "Intimidação",
+                "Sobrevivência",
+                "Rastreamento",
+                "Furtividade",
+                "Percepção",
+              ],
+            },
+          }
+        } else if (loadedCharacter.system === "Tormenta 20") {
+          templateFields = {
+            atributos: {
+              type: "object",
+              required: true,
+              fields: {
+                força: { type: "number", required: true, min: 0, max: 5 },
+                agilidade: { type: "number", required: true, min: 0, max: 5 },
+                intelecto: { type: "number", required: true, min: 0, max: 5 },
+                presença: { type: "number", required: true, min: 0, max: 5 },
+              },
+            },
+            origem: {
+              type: "string",
+              required: true,
+              options: ["Acadêmico", "Artesão", "Assistente de Laboratório", "Batedor", "Capanga"],
+            },
+            classe: {
+              type: "string",
+              required: true,
+              options: ["Arcanista", "Bárbaro", "Bardo", "Bucaneiro", "Caçador", "Cavaleiro"],
+            },
+            nível: { type: "number", required: true, min: 1, max: 20 },
+            pontosDeVida: { type: "number", required: true },
+            mana: { type: "number", required: false },
+            equipamento: {
+              type: "list",
+              itemType: "string",
+            },
+          }
+        } else if (loadedCharacter.system === "Call of Cthulhu") {
+          templateFields = {
+            atributos: {
+              type: "object",
+              required: true,
+              fields: {
+                força: { type: "number", required: true, min: 15, max: 90 },
+                destreza: { type: "number", required: true, min: 15, max: 90 },
+                inteligência: { type: "number", required: true, min: 40, max: 90 },
+                constituição: { type: "number", required: true, min: 15, max: 90 },
+                aparência: { type: "number", required: true, min: 15, max: 90 },
+                poder: { type: "number", required: true, min: 15, max: 90 },
+                tamanho: { type: "number", required: true, min: 40, max: 90 },
+                educação: { type: "number", required: true, min: 40, max: 90 },
+              },
+            },
+            ocupação: {
+              type: "string",
+              required: true,
+              options: ["Detetive", "Jornalista", "Professor", "Médico", "Advogado", "Artista"],
+            },
+            idade: { type: "number", required: true, min: 15, max: 90 },
+            sanidade: { type: "number", required: true, min: 0, max: 99 },
+            pontosDeMagia: { type: "number", required: true },
+            habilidades: {
+              type: "list",
+              itemType: "string",
+              options: ["Investigação", "Psicologia", "Uso de Armas", "Primeiros Socorros", "Biblioteca"],
+            },
+          }
+        }
+
+        setTemplate({
+          id: "1",
+          system_name: loadedCharacter.system,
+          version: "1.0",
+          description: "Template do sistema",
+          fields: templateFields,
+        })
+      }
 
       setIsLoading(false)
     }, 1000)
@@ -138,12 +185,24 @@ export default function EditCharacterPage() {
       // Simular atualização do personagem
       await new Promise((resolve) => setTimeout(resolve, 1500))
 
-      toast({
-        title: "Personagem atualizado com sucesso!",
-        description: `${character.name} foi atualizado.`,
+      // Atualizar no storage
+      const updatedCharacter = CharactersStorage.update(character.id, {
+        name: character.name,
+        history: character.history,
+        image: character.image,
+        fields: character.fields,
       })
 
-      router.push(`/dashboard/characters/${character.id}`)
+      if (updatedCharacter) {
+        toast({
+          title: "Personagem atualizado com sucesso!",
+          description: `${character.name} foi atualizado.`,
+        })
+
+        router.push(`/dashboard/characters/${character.id}`)
+      } else {
+        throw new Error("Erro ao atualizar personagem")
+      }
     } catch (error) {
       toast({
         title: "Erro ao atualizar personagem",
@@ -153,6 +212,17 @@ export default function EditCharacterPage() {
     } finally {
       setIsSaving(false)
     }
+  }
+
+  // Gerar fallback para avatar baseado no nome
+  const getAvatarFallback = () => {
+    if (!character?.name) return "PJ"
+    return character.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
   }
 
   if (isLoading) {
@@ -171,7 +241,7 @@ export default function EditCharacterPage() {
           </div>
         </div>
         <div className="grid gap-6">
-          <Card className="animate-pulse">
+          <Card className="animate-pulse border-0 shadow-sm">
             <CardHeader>
               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
             </CardHeader>
@@ -212,11 +282,11 @@ export default function EditCharacterPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Editar {character.name}</h1>
-            <p className="text-muted-foreground">{character.system}</p>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Editar {character.name}</h1>
+            <p className="text-gray-600">{character.system}</p>
           </div>
         </div>
-        <Button onClick={handleSubmit} disabled={isSaving}>
+        <Button onClick={handleSubmit} disabled={isSaving} className="bg-purple-600 hover:bg-purple-700">
           {isSaving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -231,44 +301,33 @@ export default function EditCharacterPage() {
         </Button>
       </div>
 
-      <Card>
+      <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle>Informações Básicas</CardTitle>
+          <CardTitle className="text-gray-900">Informações Básicas</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center space-x-4">
-            <Avatar className="w-20 h-20">
-              <AvatarImage src={character.image || "/placeholder.svg"} />
-              <AvatarFallback>
-                {character.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-2">
-              <Button variant="outline" size="sm">
-                <Upload className="mr-2 h-4 w-4" />
-                Alterar Foto
-              </Button>
-              <p className="text-sm text-muted-foreground">Formatos aceitos: JPG, PNG (máx. 2MB)</p>
-            </div>
-          </div>
+        <CardContent className="space-y-6">
+          <ImageUpload
+            value={character.image || ""}
+            onChange={(image) => setCharacter({ ...character, image })}
+            fallback={getAvatarFallback()}
+          />
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome do Personagem *</Label>
+              <Label htmlFor="name" className="text-gray-700">
+                Nome do Personagem *
+              </Label>
               <Input
                 id="name"
                 value={character.name}
                 onChange={(e) => setCharacter({ ...character, name: e.target.value })}
                 placeholder="Digite o nome do personagem"
                 required
+                className="border-gray-200 focus:border-purple-500 focus:ring-purple-500"
               />
             </div>
             <div className="space-y-2">
-              <Label>Sistema</Label>
+              <Label className="text-gray-700">Sistema</Label>
               <div className="flex items-center h-10">
                 <Badge>{character.system}</Badge>
               </div>
@@ -276,22 +335,27 @@ export default function EditCharacterPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="history">História do Personagem</Label>
+            <Label htmlFor="history" className="text-gray-700">
+              História do Personagem
+            </Label>
             <Textarea
               id="history"
               value={character.history}
               onChange={(e) => setCharacter({ ...character, history: e.target.value })}
               placeholder="Conte a história do seu personagem..."
               rows={4}
+              className="border-gray-200 focus:border-purple-500 focus:ring-purple-500"
             />
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle>Atributos da Ficha</CardTitle>
-          <CardDescription>Edite os campos específicos do sistema {character.system}</CardDescription>
+          <CardTitle className="text-gray-900">Atributos da Ficha</CardTitle>
+          <CardDescription className="text-gray-600">
+            Edite os campos específicos do sistema {character.system}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <DynamicFormRenderer

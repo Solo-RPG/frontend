@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
+import { CharactersStorage } from "@/lib/characters-storage"
 
 interface Character {
   id: string
@@ -45,34 +46,13 @@ export default function CharacterDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
+    // Inicializar storage
+    CharactersStorage.init()
+
     // Simular carregamento do personagem
     setTimeout(() => {
-      setCharacter({
-        id: params.id as string,
-        name: "Aragorn",
-        system: "D&D 5e",
-        level: "Nível 5 Ranger",
-        owner: "João Silva",
-        history:
-          "Aragorn é um Dúnadan do Norte, herdeiro de Isildur e legítimo rei de Gondor. Criado em Valfenda pelos elfos, ele se tornou um Ranger experiente, protegendo as terras selvagens. Conhecido como Passolargo, ele guia e protege os hobbits em sua jornada para destruir o Um Anel.",
-        lastModified: "2024-01-15",
-        fields: {
-          atributos: {
-            força: 16,
-            destreza: 14,
-            constituição: 15,
-            inteligência: 12,
-            sabedoria: 15,
-            carisma: 14,
-          },
-          classe: "Ranger",
-          raça: "Humano",
-          nível: 5,
-          pontosDeVida: 58,
-          classeDeArmadura: 16,
-          habilidades: ["Sobrevivência", "Rastreamento", "Furtividade", "Percepção"],
-        },
-      })
+      const loadedCharacter = CharactersStorage.getById(params.id as string)
+      setCharacter(loadedCharacter)
       setIsLoading(false)
     }, 1000)
   }, [params.id])
@@ -83,12 +63,19 @@ export default function CharacterDetailPage() {
       // Simular exclusão
       await new Promise((resolve) => setTimeout(resolve, 1500))
 
-      toast({
-        title: "Personagem excluído",
-        description: `${character?.name} foi removido com sucesso.`,
-      })
+      // Remover do storage
+      const success = CharactersStorage.remove(character?.id || "")
 
-      router.push("/dashboard/characters")
+      if (success) {
+        toast({
+          title: "Personagem excluído",
+          description: `${character?.name} foi removido com sucesso.`,
+        })
+
+        router.push("/dashboard/characters")
+      } else {
+        throw new Error("Erro ao excluir personagem")
+      }
     } catch (error) {
       toast({
         title: "Erro ao excluir",

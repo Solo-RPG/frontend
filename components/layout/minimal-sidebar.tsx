@@ -83,7 +83,7 @@ export function MinimalSidebar() {
                   variant="ghost"
                   size="icon"
                   className="w-12 h-12 mx-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-                  onClick={() => router.push("/dashboard/characters/new")}
+                  onClick={() => router.push("/dashboard/characters/create")}
                 >
                   <Plus className="h-5 w-5" />
                 </Button>
