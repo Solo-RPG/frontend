@@ -14,14 +14,8 @@ import Link from "next/link"
 import { DynamicFormRenderer } from "@/components/forms/dynamic-form-renderer"
 import { CharactersStorage } from "@/lib/characters-storage"
 import { ImageUpload } from "@/components/ui/image-upload"
-
-interface Template {
-  id: string
-  system_name: string
-  version: string
-  description: string
-  fields: any
-}
+import { getTemplates } from "@/lib/service/templates-service"
+import { Template } from "@/lib/service/types"
 
 export default function CreateCharacterPage() {
   const [step, setStep] = useState(1)
@@ -39,124 +33,25 @@ export default function CreateCharacterPage() {
   const { toast } = useToast()
 
   useEffect(() => {
-    // Inicializar storage
-    CharactersStorage.init()
+    const loadTemplates = async () => {
+      CharactersStorage.init()
+      try {
+        const fetchedTemplates = await getTemplates()
+        setTemplates(fetchedTemplates)
+      } catch (error) {
+        toast({
+          title: "Erro ao carregar templates",
+          description: "Não foi possível carregar os templates. Tente novamente.",
+          variant: "destructive",
+        })
+        console.error("Erro ao carregar templates:", error)
+      } finally {
+        setTemplatesLoading(false)
+      }
+    }
 
-    // Simular carregamento de templates
-    setTimeout(() => {
-      setTemplates([
-        {
-          id: "1",
-          system_name: "D&D 5e",
-          version: "5.0",
-          description: "Sistema clássico de RPG com classes, raças e magias",
-          fields: {
-            atributos: {
-              type: "object",
-              required: true,
-              fields: {
-                força: { type: "number", required: true, min: 1, max: 20 },
-                destreza: { type: "number", required: true, min: 1, max: 20 },
-                constituição: { type: "number", required: true, min: 1, max: 20 },
-                inteligência: { type: "number", required: true, min: 1, max: 20 },
-                sabedoria: { type: "number", required: true, min: 1, max: 20 },
-                carisma: { type: "number", required: true, min: 1, max: 20 },
-              },
-            },
-            classe: {
-              type: "string",
-              required: true,
-              options: ["Guerreiro", "Mago", "Ladino", "Clérigo", "Ranger", "Bárbaro"],
-            },
-            raça: {
-              type: "string",
-              required: true,
-              options: ["Humano", "Elfo", "Anão", "Halfling", "Meio-elfo", "Meio-orc"],
-            },
-            nível: { type: "number", required: true, min: 1, max: 20 },
-            pontosDeVida: { type: "number", required: true },
-            classeDeArmadura: { type: "number", required: true },
-            habilidades: {
-              type: "list",
-              itemType: "string",
-              options: ["Acrobacia", "Arcanismo", "Atletismo", "Enganação", "História", "Intimidação"],
-            },
-          },
-        },
-        {
-          id: "2",
-          system_name: "Tormenta 20",
-          version: "1.0",
-          description: "Sistema brasileiro com magia e tecnologia",
-          fields: {
-            atributos: {
-              type: "object",
-              required: true,
-              fields: {
-                força: { type: "number", required: true, min: 0, max: 5 },
-                agilidade: { type: "number", required: true, min: 0, max: 5 },
-                intelecto: { type: "number", required: true, min: 0, max: 5 },
-                presença: { type: "number", required: true, min: 0, max: 5 },
-              },
-            },
-            origem: {
-              type: "string",
-              required: true,
-              options: ["Acadêmico", "Artesão", "Assistente de Laboratório", "Batedor", "Capanga"],
-            },
-            classe: {
-              type: "string",
-              required: true,
-              options: ["Arcanista", "Bárbaro", "Bardo", "Bucaneiro", "Caçador", "Cavaleiro"],
-            },
-            nível: { type: "number", required: true, min: 1, max: 20 },
-            pontosDeVida: { type: "number", required: true },
-            mana: { type: "number", required: false },
-            equipamento: {
-              type: "list",
-              itemType: "string",
-            },
-          },
-        },
-        {
-          id: "3",
-          system_name: "Call of Cthulhu",
-          version: "7.0",
-          description: "Horror cósmico e investigação sobrenatural",
-          fields: {
-            atributos: {
-              type: "object",
-              required: true,
-              fields: {
-                força: { type: "number", required: true, min: 15, max: 90 },
-                destreza: { type: "number", required: true, min: 15, max: 90 },
-                inteligência: { type: "number", required: true, min: 40, max: 90 },
-                constituição: { type: "number", required: true, min: 15, max: 90 },
-                aparência: { type: "number", required: true, min: 15, max: 90 },
-                poder: { type: "number", required: true, min: 15, max: 90 },
-                tamanho: { type: "number", required: true, min: 40, max: 90 },
-                educação: { type: "number", required: true, min: 40, max: 90 },
-              },
-            },
-            ocupação: {
-              type: "string",
-              required: true,
-              options: ["Detetive", "Jornalista", "Professor", "Médico", "Advogado", "Artista"],
-            },
-            idade: { type: "number", required: true, min: 15, max: 90 },
-            sanidade: { type: "number", required: true, min: 0, max: 99 },
-            pontosDeMagia: { type: "number", required: true },
-            habilidades: {
-              type: "list",
-              itemType: "string",
-              options: ["Investigação", "Psicologia", "Uso de Armas", "Primeiros Socorros", "Biblioteca"],
-            },
-          },
-        },
-      ])
-      setTemplatesLoading(false)
-    }, 1000)
-  }, [])
+    loadTemplates()
+  }, [toast])
 
   const handleTemplateSelect = (template: Template) => {
     setSelectedTemplate(template)
@@ -164,13 +59,10 @@ export default function CreateCharacterPage() {
   }
 
   const handleSubmit = async () => {
-    if (!selectedTemplate) return
+    if (!selectedTemplate || !characterData.name) return
 
     setIsLoading(true)
     try {
-      // Simular criação do personagem
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
       // Determinar o nível baseado nos campos
       let level = "Nível 1"
       if (characterData.fields.nível) {
@@ -186,7 +78,7 @@ export default function CreateCharacterPage() {
         name: characterData.name,
         system: selectedTemplate.system_name,
         level: level,
-        owner: "Usuário Atual", // Pode ser obtido do contexto de autenticação
+        owner: "Usuário Atual",
         image: characterData.photo,
         history: characterData.history,
         fields: characterData.fields,
@@ -209,7 +101,6 @@ export default function CreateCharacterPage() {
     }
   }
 
-  // Gerar fallback para avatar baseado no nome
   const getAvatarFallback = () => {
     if (!characterData.name) return "PJ"
     return characterData.name
@@ -230,18 +121,17 @@ export default function CreateCharacterPage() {
               Voltar
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Nova Ficha</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Nova Ficha</h1>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse border-0 shadow-sm">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
               <CardHeader>
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-6 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-muted rounded w-1/2"></div>
               </CardHeader>
               <CardContent>
-                <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                <div className="h-10 bg-muted rounded"></div>
               </CardContent>
             </Card>
           ))}
@@ -260,30 +150,32 @@ export default function CreateCharacterPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Nova Ficha</h1>
-          <p className="text-gray-600">{step === 1 ? "Escolha um template" : "Preencha os dados do personagem"}</p>
+          <h1 className="text-3xl font-bold tracking-tight">Nova Ficha</h1>
+          <p className="text-muted-foreground">
+            {step === 1 ? "Escolha um template" : "Preencha os dados do personagem"}
+          </p>
         </div>
       </div>
 
       {step === 1 && (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">Passo 1: Selecione um Template</h2>
+          <h2 className="text-xl font-semibold">Passo 1: Selecione um Template</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {templates.map((template) => (
               <Card
                 key={template.id}
-                className="cursor-pointer hover:shadow-md transition-shadow border-0 shadow-sm"
+                className="cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => handleTemplateSelect(template)}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-gray-900">{template.system_name}</CardTitle>
+                    <CardTitle>{template.system_name}</CardTitle>
                     <Badge variant="secondary">v{template.version}</Badge>
                   </div>
-                  <CardDescription className="text-gray-600">{template.description}</CardDescription>
+                  <CardDescription>{template.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700">Selecionar Template</Button>
+                  <Button className="w-full">Selecionar Template</Button>
                 </CardContent>
               </Card>
             ))}
@@ -294,13 +186,13 @@ export default function CreateCharacterPage() {
       {step === 2 && selectedTemplate && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Passo 2: Dados do Personagem</h2>
+            <h2 className="text-xl font-semibold">Passo 2: Dados do Personagem</h2>
             <Badge variant="outline">{selectedTemplate.system_name}</Badge>
           </div>
 
-          <Card className="border-0 shadow-sm">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-gray-900">Informações Básicas</CardTitle>
+              <CardTitle>Informações Básicas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <ImageUpload
@@ -311,40 +203,34 @@ export default function CreateCharacterPage() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-gray-700">
-                    Nome do Personagem *
-                  </Label>
+                  <Label htmlFor="name">Nome do Personagem *</Label>
                   <Input
                     id="name"
                     value={characterData.name}
                     onChange={(e) => setCharacterData((prev) => ({ ...prev, name: e.target.value }))}
                     placeholder="Digite o nome do personagem"
                     required
-                    className="border-gray-200 focus:border-purple-500 focus:ring-purple-500"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="history" className="text-gray-700">
-                  História do Personagem
-                </Label>
+                <Label htmlFor="history">História do Personagem</Label>
                 <Textarea
                   id="history"
                   value={characterData.history}
                   onChange={(e) => setCharacterData((prev) => ({ ...prev, history: e.target.value }))}
                   placeholder="Conte a história do seu personagem..."
                   rows={4}
-                  className="border-gray-200 focus:border-purple-500 focus:ring-purple-500"
                 />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-gray-900">Atributos da Ficha</CardTitle>
-              <CardDescription className="text-gray-600">
+              <CardTitle>Atributos da Ficha</CardTitle>
+              <CardDescription>
                 Preencha os campos específicos do sistema {selectedTemplate.system_name}
               </CardDescription>
             </CardHeader>
@@ -358,14 +244,10 @@ export default function CreateCharacterPage() {
           </Card>
 
           <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setStep(1)} className="border-gray-200 hover:bg-gray-50">
+            <Button variant="outline" onClick={() => setStep(1)}>
               Voltar
             </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={!characterData.name || isLoading}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
+            <Button onClick={handleSubmit} disabled={!characterData.name || isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

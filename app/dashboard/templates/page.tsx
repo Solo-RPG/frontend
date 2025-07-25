@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { Plus, FileText, Upload, Loader2 } from "lucide-react"
+import { Plus, FileText, Upload, Loader2, Trash } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -16,36 +16,38 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { uploadTemplate, getTemplates, deleteTemplate } from "@/lib/service/templates-service"
+import {Template} from "@/lib/service/types"
+import Link from "next/link"
 
 export default function TemplatesPage() {
-  const [templates] = useState([
-    {
-      id: "1",
-      system_name: "D&D 5e",
-      version: "5.0",
-      description: "Sistema clássico de RPG com classes, raças e magias",
-      created_at: "2024-01-10",
-    },
-    {
-      id: "2",
-      system_name: "Tormenta 20",
-      version: "1.0",
-      description: "Sistema brasileiro com magia e tecnologia",
-      created_at: "2024-01-08",
-    },
-    {
-      id: "3",
-      system_name: "Call of Cthulhu",
-      version: "7.0",
-      description: "Horror cósmico e investigação sobrenatural",
-      created_at: "2024-01-05",
-    },
-  ])
-
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [newTemplateJson, setNewTemplateJson] = useState("")
   const [isUploading, setIsUploading] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { toast } = useToast()
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        setIsLoading(true)
+        const fetchedTemplates = await getTemplates()
+        setTemplates(fetchedTemplates)
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os templates. Tente novamente mais tarde.",
+          variant: "destructive",
+        })
+        console.error("Erro ao buscar templates:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchTemplates()
+  }, [])
 
   const handleUploadTemplate = async () => {
     if (!newTemplateJson.trim()) {
@@ -58,12 +60,13 @@ export default function TemplatesPage() {
     }
 
     try {
-      JSON.parse(newTemplateJson) // Validar JSON
       setIsUploading(true)
-
-      // Simular upload
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
+      const templateData = JSON.parse(newTemplateJson)
+      const uploadedTemplate = await uploadTemplate(templateData)
+      
+      // Atualiza a lista de templates após o upload
+      setTemplates(prev => [...prev, uploadedTemplate])
+      
       toast({
         title: "Template enviado com sucesso!",
         description: "O novo template foi adicionado ao sistema.",
@@ -72,15 +75,24 @@ export default function TemplatesPage() {
       setNewTemplateJson("")
       setIsDialogOpen(false)
     } catch (error) {
-      toast({
-        title: "Erro no JSON",
-        description: "O JSON fornecido não é válido. Verifique a sintaxe.",
-        variant: "destructive",
-      })
+      if (error instanceof SyntaxError) {
+        toast({
+          title: "Erro no JSON",
+          description: "O JSON fornecido não é válido. Verifique a sintaxe.",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Erro no envio",
+          description: "Ocorreu um erro ao enviar o template. Por favor, tente novamente.",
+          variant: "destructive",
+        })
+        console.error("Erro detalhado:", error)
+      }
     } finally {
       setIsUploading(false)
     }
-  }
+  };
 
   const exampleJson = `{
   "system_name": "Meu Sistema",
@@ -191,36 +203,94 @@ export default function TemplatesPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {templates.map((template) => (
+      {isLoading ? (
+        <div className="col-span-full flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : templates.length === 0 ? (
+        <div className="col-span-full text-center py-8">
+          <p className="text-muted-foreground">Nenhum template encontrado</p>
+        </div>
+      ) : (
+        templates.map((template) => (
           <Card key={template.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <FileText className="h-5 w-5 text-purple-600" />
-                  <CardTitle className="text-lg">{template.system_name}</CardTitle>
+                  <CardTitle className="text-lg">{template.system_name || 'Sem nome'}</CardTitle>
                 </div>
-                <Badge variant="secondary">v{template.version}</Badge>
+                {template.version && (
+                  <Badge variant="secondary">v{template.version}</Badge>
+                )}
               </div>
-              <CardDescription>{template.description}</CardDescription>
+              <CardDescription>
+                {template.description || "Sem descrição"}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="text-sm text-muted-foreground">
-                  Criado em: {new Date(template.created_at).toLocaleDateString("pt-BR")}
-                </div>
+                {template.created_at && (
+                  <div className="text-sm text-muted-foreground">
+                    Criado em: {new Date(template.created_at).toLocaleDateString("pt-BR")}
+                  </div>
+                )}
                 <div className="flex space-x-2">
-                  <Button size="sm" variant="outline" className="flex-1 bg-transparent">
-                    Ver Detalhes
-                  </Button>
-                  <Button size="sm" variant="outline" className="flex-1 bg-transparent">
+                  <Link 
+                    href={`/dashboard/templates/${template.id}`}
+                    passHref
+                    legacyBehavior
+                  >
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1 bg-transparent"
+                      asChild
+                    >
+                      <a>Ver Detalhes</a>
+                    </Button>
+                  </Link>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 bg-transparent"
+                  >
                     Editar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-red-600 hover:bg-red-50"
+                    onClick={async () => {
+                      const confirmed = confirm("Tem certeza que deseja deletar este template?");
+                      if (!confirmed) return;
+
+                      try {
+                        await deleteTemplate(template.id);
+                        setTemplates(prev => prev.filter(t => t.id !== template.id));
+                        toast({
+                          title: "Template deletado",
+                          description: "O template foi removido com sucesso.",
+                        });
+                      } catch (error) {
+                        toast({
+                          title: "Erro ao deletar",
+                          description: "Não foi possível deletar o template.",
+                          variant: "destructive",
+                        });
+                        console.error(error);
+                      }
+                    }}
+                  >
+                    <Trash className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        ))
+      )}
+    </div>
 
       <Card>
         <CardHeader>
