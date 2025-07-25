@@ -1,5 +1,6 @@
 import api from '../axios';
-import {Template} from './types';
+import {Template, TemplateEdit} from './types';
+import { AxiosError } from 'axios'
 
 export const getTemplates = async (): Promise<Template[]> => {
   try {
@@ -47,5 +48,27 @@ export const deleteTemplate = async (id: string) => {
   } catch (error) {
     console.error('Erro ao buscar template:', error)
     return null
+  }
+}
+
+export const updateTemplate = async (id: string, templateData: Template) => {
+  try {
+    const response = await api.put(`/api/templates/${id}`, templateData)
+    return response.data
+  } catch (error: unknown) {
+    if (error instanceof AxiosError) {
+      if (error.response?.status === 422) {
+        const validationErrors = error.response.data?.errors || {}
+        throw new Error(
+          Object.entries(validationErrors)
+            .map(([field, messages]) => 
+              `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`
+            )
+            .join('\n')
+        )
+      }
+      throw new Error(error.response?.data?.message || 'Erro ao atualizar template')
+    }
+    throw new Error('Ocorreu um erro desconhecido ao atualizar o template')
   }
 }

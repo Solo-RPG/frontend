@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { ArrowLeft, Upload, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { DynamicFormRenderer } from "@/components/forms/dynamic-form-renderer"
+import { TemplateEditModal } from "@/components/forms/template-edit-form"
 
 interface Template {
   id: string

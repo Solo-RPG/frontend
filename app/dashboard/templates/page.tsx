@@ -19,6 +19,7 @@ import {
 import { uploadTemplate, getTemplates, deleteTemplate } from "@/lib/service/templates-service"
 import {Template} from "@/lib/service/types"
 import Link from "next/link"
+import { TemplateEditModal } from "@/components/forms/template-edit-form"
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([])
@@ -28,24 +29,24 @@ export default function TemplatesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { toast } = useToast()
 
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        setIsLoading(true)
-        const fetchedTemplates = await getTemplates()
-        setTemplates(fetchedTemplates)
-      } catch (error) {
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar os templates. Tente novamente mais tarde.",
-          variant: "destructive",
-        })
-        console.error("Erro ao buscar templates:", error)
-      } finally {
-        setIsLoading(false)
-      }
+  const fetchTemplates = async () => {
+    try {
+      setIsLoading(true)
+      const fetchedTemplates = await getTemplates()
+      setTemplates(fetchedTemplates)
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os templates. Tente novamente mais tarde.",
+        variant: "destructive",
+      })
+      console.error("Erro ao buscar templates:", error)
+    } finally {
+      setIsLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchTemplates()
   }, [])
 
@@ -250,13 +251,18 @@ export default function TemplatesPage() {
                       <a>Ver Detalhes</a>
                     </Button>
                   </Link>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 bg-transparent"
-                  >
-                    Editar
-                  </Button>
+                  <CardContent>
+                    <div className="flex space-x-2">
+                      <TemplateEditModal 
+                        template={template}
+                        onSuccess={fetchTemplates}
+                      >
+                        <Button size="sm" variant="outline" className="flex-1">
+                          Editar
+                        </Button>
+                      </TemplateEditModal>
+                    </div>
+                  </CardContent>
                   <Button
                     size="sm"
                     variant="ghost"

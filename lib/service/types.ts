@@ -13,6 +13,15 @@ export interface TemplateBasicInfo {
   created_at?: string;
 }
 
+export interface TemplateEdit {
+  id: string           
+  system_name: string
+  version: string
+  description?: string
+  created_at?: string
+  fields?: any
+}
+
 export interface FieldConfig {
   name?: string
   type: string
