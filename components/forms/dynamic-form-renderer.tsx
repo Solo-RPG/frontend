@@ -1,4 +1,5 @@
 "use client"
+
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -7,9 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, X } from "lucide-react"
 
+type FieldType = 'string' | 'number' | 'boolean' | 'list' | 'object'
+
 interface FieldDefinition {
-  name?: string // Adicionamos a propriedade name para armazenar o nome exibível
-  type: string
+  name?: string
+  type: FieldType
   required?: boolean
   min?: number
   max?: number
@@ -20,34 +23,34 @@ interface FieldDefinition {
 
 interface DynamicFormRendererProps {
   fields: Record<string, FieldDefinition>
-  values: Record<string, any>
-  onChange: (values: Record<string, any>) => void
+  values: Record<string, unknown>
+  onChange: (values: Record<string, unknown>) => void
 }
 
 export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRendererProps) {
-  const updateValue = (path: string, value: any) => {
+  const updateValue = (path: string, value: unknown) => {
     const newValues = { ...values }
     const keys = path.split(".")
-    let current = newValues
+    let current: Record<string, unknown> = newValues
 
     for (let i = 0; i < keys.length - 1; i++) {
       if (!current[keys[i]]) {
         current[keys[i]] = {}
       }
-      current = current[keys[i]]
+      current = current[keys[i]] as Record<string, unknown>
     }
 
     current[keys[keys.length - 1]] = value
     onChange(newValues)
   }
 
-  const getValue = (path: string) => {
+  const getValue = (path: string): unknown => {
     const keys = path.split(".")
-    let current = values
+    let current: unknown = values
 
     for (const key of keys) {
-      if (current && typeof current === "object") {
-        current = current[key]
+      if (current && typeof current === "object" && !Array.isArray(current)) {
+        current = (current as Record<string, unknown>)[key]
       } else {
         return undefined
       }
@@ -56,7 +59,6 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
     return current
   }
 
-  // Função para obter o nome de exibição do campo
   const getDisplayName = (field: FieldDefinition, defaultName: string) => {
     return field.name || defaultName.split('_').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
@@ -76,7 +78,10 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
                 {displayName}
                 {field.required && <span className="text-red-500 ml-1">*</span>}
               </Label>
-              <Select value={value || ""} onValueChange={(val) => updateValue(path, val)}>
+              <Select 
+                value={value as string || ""} 
+                onValueChange={(val) => updateValue(path, val)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder={`Selecione ${displayName}`} />
                 </SelectTrigger>
@@ -100,7 +105,7 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
             <Input
               id={path}
               type="text"
-              value={value || ""}
+              value={value as string || ""}
               onChange={(e) => updateValue(path, e.target.value)}
               placeholder={`Digite ${displayName}`}
               required={field.required}
@@ -123,7 +128,7 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
             <Input
               id={path}
               type="number"
-              value={value || ""}
+              value={value as number || ""}
               onChange={(e) => updateValue(path, Number.parseInt(e.target.value) || 0)}
               min={field.min}
               max={field.max}
@@ -136,13 +141,17 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
       case "boolean":
         return (
           <div key={path} className="flex items-center space-x-2">
-            <Checkbox id={path} checked={value || false} onCheckedChange={(checked) => updateValue(path, checked)} />
+            <Checkbox 
+              id={path} 
+              checked={value as boolean || false} 
+              onCheckedChange={(checked) => updateValue(path, checked)} 
+            />
             <Label htmlFor={path}>{displayName}</Label>
           </div>
         )
 
-      case "list":
-        const listValue = value || []
+      case "list": {
+        const listValue = Array.isArray(value) ? value : []
         return (
           <div key={path} className="space-y-2">
             <Label>
@@ -150,11 +159,11 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
               {field.required && <span className="text-red-500 ml-1">*</span>}
             </Label>
             <div className="space-y-2">
-              {listValue.map((item: any, index: number) => (
-                <div key={index} className="flex items-center space-x-2">
+              {listValue.map((item: unknown, index: number) => (
+                <div key={`${path}-${index}`} className="flex items-center space-x-2">
                   {field.options ? (
                     <Select
-                      value={item}
+                      value={item as string}
                       onValueChange={(val) => {
                         const newList = [...listValue]
                         newList[index] = val
@@ -175,7 +184,7 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
                   ) : (
                     <Input
                       className="flex-1"
-                      value={item}
+                      value={item as string}
                       onChange={(e) => {
                         const newList = [...listValue]
                         newList[index] = e.target.value
@@ -189,7 +198,7 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const newList = listValue.filter((_: any, i: number) => i !== index)
+                      const newList = listValue.filter((_, i) => i !== index)
                       updateValue(path, newList)
                     }}
                   >
@@ -212,6 +221,7 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
             </div>
           </div>
         )
+      }
 
       case "object":
         if (!field.fields) return null
@@ -226,8 +236,8 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 {Object.entries(field.fields).map(([subKey, subField]) =>
-                  renderField(subKey, subField, `${path}.${subKey}`),
-                )}
+  renderField(subKey, subField, `${path}.${subKey}`),
+)}
               </div>
             </CardContent>
           </Card>
@@ -238,5 +248,9 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
     }
   }
 
-  return <div className="space-y-4">{Object.entries(fields).map(([key, field]) => renderField(key, field))}</div>
+  return (
+    <div className="space-y-4">
+      {Object.entries(fields).map(([key, field]) => renderField(key, field))}
+    </div>
+  )
 }

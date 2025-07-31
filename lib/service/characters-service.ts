@@ -1,4 +1,5 @@
 import {api} from '../axios';
+import {authService} from './auth-service'
 import {
   Character,
   CharacterCreateRequest,
@@ -12,12 +13,13 @@ const CharacterService = {
    * @returns Personagem criado
    */
   async createCharacter(characterData: CharacterCreateRequest): Promise<Character> {
-    try {
-      const response = await api.characters.post<Character>('/', characterData);
-      return response.data;
-    } catch (error: any) {
-      throw error.response?.data || error.message;
-    }
+    const tokens = authService.getAuthTokens()
+    const response = await api.characters.post<Character>('/', characterData, {
+      headers: {
+        Authorization: `Bearer ${tokens?.token}`
+      }
+    })
+    return response.data
   },
 
   /**

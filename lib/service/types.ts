@@ -3,6 +3,36 @@ export interface ApiResponse<T> {
   status: number;
 }
 
+//User types
+
+export interface UserInfo {
+  id: string;
+  email: string;
+  name: string;
+}
+
+export interface RegisterUserPayload {
+  name: string;
+  email: string;
+  password: string;
+  passwordConfirm: string;
+}
+
+export interface LoginUserPayload {
+  email: string;
+  password: string;
+  rememberMe: boolean;
+}
+
+export interface LoginResponse {
+  token: string;
+  refreshToken: string;
+  expiresIn: {
+    token: number;
+    refreshToken: number;
+  };
+}
+
 // Template types
 
 export type Template = Record<string, any>;
@@ -40,10 +70,10 @@ export interface Character {
 
 export interface CharacterCreateRequest {
   ownerId: string;
-  nomePersonagem: string;
+  name: string;
   fichaId?: string;
-  historia?: string;
-  imagem?: string;
+  history?: string;
+  image?: string;
 }
 
 export interface CharacterUpdateRequest {
