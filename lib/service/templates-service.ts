@@ -1,10 +1,10 @@
-import api from '../axios';
-import {Template, TemplateEdit} from './types';
+import {api} from '../axios';
+import {Template} from './types';
 import { AxiosError } from 'axios'
 
 export const getTemplates = async (): Promise<Template[]> => {
   try {
-    const response = await api.get('/api/templates');
+    const response = await api.templates.get('/api/templates');
     // Garante que cada template tenha pelo menos um ID
     return response.data.map((template: any) => ({
       id: template.id || template._id?.toString(),
@@ -19,7 +19,7 @@ export const getTemplates = async (): Promise<Template[]> => {
 export const uploadTemplate = async (templateJson: Template): Promise<Template> => {
   try {
     // Envia o JSON diretamente, sem encapsular em outro objeto
-    const response = await api.post('/api/templates', templateJson);
+    const response = await api.templates.post('/api/templates', templateJson);
     return response.data;
   } catch (error) {
     console.error('Error uploading template:', error);
@@ -30,7 +30,7 @@ export const uploadTemplate = async (templateJson: Template): Promise<Template> 
 export const getTemplateById = async (id: string) => {
   console.log(`Buscando template com ID: ${id}`) // Debug
   try {
-    const response = await api.get(`/api/templates/by-id/${id}`)
+    const response = await api.templates.get(`/api/templates/by-id/${id}`)
     console.log('Resposta da API:', response.data) // Debug
     return response.data
   } catch (error) {
@@ -42,7 +42,7 @@ export const getTemplateById = async (id: string) => {
 export const deleteTemplate = async (id: string) => {
   console.log(`Buscando template com ID: ${id}`) // Debug
   try {
-    const response = await api.delete(`/api/templates/by-id/${id}`)
+    const response = await api.templates.delete(`/api/templates/by-id/${id}`)
     console.log('Resposta da API:', response.data) // Debug
     return response.data
   } catch (error) {
@@ -53,7 +53,7 @@ export const deleteTemplate = async (id: string) => {
 
 export const updateTemplate = async (id: string, templateData: Template) => {
   try {
-    const response = await api.put(`/api/templates/${id}`, templateData)
+    const response = await api.templates.put(`/api/templates/${id}`, templateData)
     return response.data
   } catch (error: unknown) {
     if (error instanceof AxiosError) {
