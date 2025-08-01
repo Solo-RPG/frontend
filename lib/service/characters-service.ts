@@ -13,8 +13,9 @@ const CharacterService = {
    * @returns Personagem criado
    */
   async createCharacter(characterData: CharacterCreateRequest): Promise<Character> {
+    console.log(characterData)
     const tokens = authService.getAuthTokens()
-    const response = await api.characters.post<Character>('/api/characters/', characterData, {
+    const response = await api.characters.post<Character>('/api/characters', characterData, {
       headers: {
         Authorization: `Bearer ${tokens?.token}`
       }

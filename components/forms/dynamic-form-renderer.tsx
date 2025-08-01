@@ -7,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, X } from "lucide-react"
+import { Template, Character, SheetFieldValue, SheetField, SheetCreateRequest } from "@/lib/service/types"
 
 type FieldType = 'string' | 'number' | 'boolean' | 'list' | 'object'
 
-interface FieldDefinition {
-  name?: string
+export interface FieldDefinition {
+  name: string
   type: FieldType
   required?: boolean
   min?: number
@@ -22,42 +23,55 @@ interface FieldDefinition {
 }
 
 interface DynamicFormRendererProps {
-  fields: Record<string, FieldDefinition>
-  values: Record<string, unknown>
-  onChange: (values: Record<string, unknown>) => void
+  fields: Record<string, FieldDefinition>;
+  values: Record<string, SheetFieldValue>;
+  onChange: (values: Record<string, SheetFieldValue>) => void;
 }
 
 export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRendererProps) {
   const updateValue = (path: string, value: unknown) => {
-    const newValues = { ...values }
-    const keys = path.split(".")
-    let current: Record<string, unknown> = newValues
-
-    for (let i = 0; i < keys.length - 1; i++) {
-      if (!current[keys[i]]) {
-        current[keys[i]] = {}
+    const newValues = { ...values };
+    
+    // Tenta atualizar diretamente primeiro
+    if (newValues[path] !== undefined) {
+      newValues[path] = value;
+    } else {
+      // Se não existir diretamente, atualiza como caminho aninhado
+      const keys = path.split('.');
+      let current: any = newValues;
+      
+      for (let i = 0; i < keys.length - 1; i++) {
+        const key = keys[i];
+        current[key] = current[key] || {};
+        current = current[key];
       }
-      current = current[keys[i]] as Record<string, unknown>
+      
+      current[keys[keys.length - 1]] = value;
     }
 
-    current[keys[keys.length - 1]] = value
-    onChange(newValues)
-  }
+    onChange(newValues);
+  };
 
   const getValue = (path: string): unknown => {
-    const keys = path.split(".")
-    let current: unknown = values
-
-    for (const key of keys) {
-      if (current && typeof current === "object" && !Array.isArray(current)) {
-        current = (current as Record<string, unknown>)[key]
-      } else {
-        return undefined
-      }
+    // Tenta acessar o valor diretamente primeiro
+    if (values[path] !== undefined) {
+      return values[path];
     }
 
-    return current
-  }
+    // Se não encontrou diretamente, tenta acessar como caminho aninhado
+    const keys = path.split('.');
+    let current: any = values;
+    
+    for (const key of keys) {
+      if (current && typeof current === 'object') {
+        current = current[key];
+      } else {
+        return undefined;
+      }
+    }
+    
+    return current;
+  };
 
   const getDisplayName = (field: FieldDefinition, defaultName: string) => {
     return field.name || defaultName.split('_').map(word => 
@@ -65,9 +79,15 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
     ).join(' ')
   }
 
-  const renderField = (key: string, field: FieldDefinition, path: string = key) => {
-    const value = getValue(path)
-    const displayName = getDisplayName(field, key)
+  const renderField = (key: string, field: FieldDefinition, parentPath = "") => {
+    const fieldName = field.name || key;
+    // Remove .value dos caminhos se existir
+    const path = parentPath ? 
+      `${parentPath.replace('.value', '')}.${fieldName}` : 
+      fieldName.replace('.value', '');
+    
+    const value = getValue(path);
+    const displayName = getDisplayName(field, key);
 
     switch (field.type) {
       case "string":
@@ -236,7 +256,7 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 {Object.entries(field.fields).map(([subKey, subField]) =>
-  renderField(subKey, subField, `${path}.${subKey}`),
+  renderField(subKey, subField, path),
 )}
               </div>
             </CardContent>

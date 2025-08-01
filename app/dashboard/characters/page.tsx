@@ -21,15 +21,18 @@ import {
   AvatarFallback, 
   AvatarImage 
 } from "@/components/ui/avatar"
+import { useRouter } from "next/navigation"
 
 export default function CharactersPage() {
   const { toast } = useToast()
   const [userInfo, setUserInfo] = useLocalStorage<UserInfo | null>('@solo-rpg:user', null)
   const [characters, setCharacters] = useState<Character[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState<string>("")
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isUserLoading, setIsUserLoading] = useState(true)
+  const router = useRouter()
 
   // Debounce search term
   useEffect(() => {
@@ -42,17 +45,16 @@ export default function CharactersPage() {
 
   // Load user info
   useEffect(() => {
-    const loadUserInfo = () => {
+    if (!userInfo) {
       const info = authService.getUserInfo()
       if (!info) {
-        window.location.href = '/login'
+        router.push('/login')
         return
       }
       setUserInfo(info)
     }
-
-    loadUserInfo()
-  }, [setUserInfo])
+    setIsUserLoading(false)
+  }, [userInfo, setUserInfo, router])
 
   // Load characters
   useEffect(() => {
@@ -75,7 +77,7 @@ export default function CharactersPage() {
           description: "Não foi possível carregar os personagens.",
           variant: "destructive",
         })
-        setCharacters([]) // Garante que a lista fique vazia em caso de erro
+        setCharacters([])
       } finally {
         setIsLoading(false)
       }
@@ -118,7 +120,7 @@ export default function CharactersPage() {
     }
   }
 
-  if (isLoading) {
+  if (isUserLoading || isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -132,9 +134,10 @@ export default function CharactersPage() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            disabled
             placeholder="Buscar personagens..."
-            className="pl-10 border-gray-200"
+            value={searchTerm || ""}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
           />
         </div>
 
@@ -146,7 +149,6 @@ export default function CharactersPage() {
                   <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
                   <div className="space-y-2 flex-1">
                     <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                   </div>
                 </div>
               </CardHeader>
@@ -194,7 +196,7 @@ export default function CharactersPage() {
           {filteredCharacters.map((character) => (
             <Link 
               key={character.id} 
-              href={`/dashboard/characters/details/${character.id}`}
+              href={`/dashboard/characters/${character.id}`}
               className="hover:shadow-md transition-shadow"
             >
               <Card className="border-0 shadow-sm hover:border-purple-200 transition-colors">
@@ -224,7 +226,7 @@ export default function CharactersPage() {
                       className="flex-1 border-gray-200 hover:bg-gray-50"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Link href={`/dashboard/characters/details/${character.id}`}>
+                      <Link href={`/dashboard/characters/${character.id}`}>
                         <Eye className="mr-2 h-4 w-4" />
                         Ver
                       </Link>

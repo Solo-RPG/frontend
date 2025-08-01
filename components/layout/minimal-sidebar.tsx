@@ -1,10 +1,12 @@
 "use client"
 
-import { Home, Users, FileText, Plus, LogOut, Dice6 } from "lucide-react"
+import { Home, Users, FileText, Plus, LogOut } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faDiceD20 } from '@fortawesome/free-solid-svg-icons'
 
 const menuItems = [
   {
@@ -44,8 +46,11 @@ export function MinimalSidebar() {
     <TooltipProvider delayDuration={0}>
       <div className="fixed left-0 top-0 z-50 h-full w-16 bg-white border-r border-gray-200 flex flex-col shadow-sm">
         {/* Logo/Header */}
-        <div className="flex items-center justify-center h-16 border-b border-gray-200 bg-purple-600">
-          <Dice6 className="h-8 w-8 text-white" />
+        <div className="flex items-center justify-center h-16 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-orange-500">
+          <FontAwesomeIcon 
+            icon={faDiceD20} 
+            className="h-7 w-7 text-white" 
+          />
         </div>
 
         {/* Menu Items */}

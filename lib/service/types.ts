@@ -69,11 +69,9 @@ export interface Character {
 }
 
 export interface CharacterCreateRequest {
-  ownerId: string;
-  name: string;
-  fichaId?: string;
-  history?: string;
-  image?: string;
+  nomePersonagem: string;
+  historia?: string;
+  imagem?: string;
 }
 
 export interface CharacterUpdateRequest {
@@ -90,7 +88,8 @@ export type SheetFieldValue =
   | string 
   | number 
   | boolean 
-  | { [key: string]: SheetField };
+  | { [key: string]: SheetFieldValue }
+  | unknown;
 
 export interface SheetField {
   value: SheetFieldValue;
@@ -112,10 +111,12 @@ export interface SheetCreateRequest {
   template_id?: string;
   system_name?: string;
   owner_id: string;
-  fields: { [key: string]: any }; // Ou user_data conforme seu backend
+  fields: { [key: string]: any };
 }
 
 export interface SheetUpdateRequest {
   fields?: { [key: string]: any };
   character_id?: string | null;
 }
+
+export type SheetFormData = Record<string, SheetFieldValue>;

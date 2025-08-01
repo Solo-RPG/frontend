@@ -1,308 +1,394 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Edit, Trash2, User, Calendar, Shield, AlertTriangle, Loader2 } from "lucide-react"
-import Link from "next/link"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
-import { CharactersStorage } from "@/lib/characters-storage"
-
-interface Character {
-  id: string
-  name: string
-  system: string
-  level: string
-  owner: string
-  image?: string
-  history: string
-  lastModified: string
-  fields: Record<string, any>
-}
+import { Loader2, Save, Trash2, Plus } from "lucide-react"
+import CharacterService from "@/lib/service/characters-service"
+import SheetService from "@/lib/service/sheets-service"
+import { getTemplateById } from "@/lib/service/templates-service"
+import { DynamicFormRenderer, FieldDefinition } from "@/components/forms/dynamic-form-renderer"
+import { Character, SheetForm, Template } from "@/lib/service/types"
+import { flattenSheetData, unflattenSheetData} from "@/lib/service/sheet-helpers"
+import sheetsService from "@/lib/service/sheets-service"
 
 export default function CharacterDetailPage() {
-  const params = useParams()
+  const { id } = useParams()
   const router = useRouter()
   const { toast } = useToast()
+  
+  // Estados principais
   const [character, setCharacter] = useState<Character | null>(null)
+  const [sheet, setSheet] = useState<SheetForm | null>(null)
+  const [template, setTemplate] = useState<Template | null>(null);
+  
+  // Estados editáveis
+  const [editableCharacter, setEditableCharacter] = useState<Partial<Character>>({})
+  const [editableSheetData, setEditableSheetData] = useState<Record<string, any>>({})
+  
+  // Estados de loading
   const [isLoading, setIsLoading] = useState(true)
+  const [isSavingCharacter, setIsSavingCharacter] = useState(false)
+  const [isSavingSheet, setIsSavingSheet] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  useEffect(() => {
-    // Inicializar storage
-    CharactersStorage.init()
-
-    // Simular carregamento do personagem
-    setTimeout(() => {
-      const loadedCharacter = CharactersStorage.getById(params.id as string)
-      setCharacter(loadedCharacter)
-      setIsLoading(false)
-    }, 1000)
-  }, [params.id])
-
-  const handleDelete = async () => {
-    setIsDeleting(true)
+useEffect(() => {
+  const loadData = async () => {
     try {
-      // Simular exclusão
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      setIsLoading(true)
+      
+      const characterData = await CharacterService.getCharacterById(id as string)
+      setCharacter(characterData)
+      setEditableCharacter({...characterData})
 
-      // Remover do storage
-      const success = CharactersStorage.remove(character?.id || "")
+      if (characterData.fichaId) {
+        const sheetResponse = await SheetService.getSheet(characterData.fichaId)
+        console.log(sheetResponse.data.id)
+        setSheet(sheetResponse.data)
+        const flattenedData = flattenSheetData(sheetResponse.data.data);
+        setEditableSheetData(flattenedData);
+        
+        const templateResponse = await getTemplateById(sheetResponse.data.template_id);
+        
+        // Converter array de campos para objeto com verificação segura
+        const fieldsArray = templateResponse.fields;
+        const fieldsObject: Record<string, FieldDefinition> = {};
+        
+        fieldsArray.forEach((field: any) => {
+          // Verificação robusta para garantir que o campo tem uma propriedade 'name'
+          if (field && field.name && typeof field.name === 'string') {
+            fieldsObject[field.name] = {
+              name: field.name,
+              type: field.type || 'string', // valor padrão
+              required: field.required,
+              min: field.min,
+              max: field.max,
+              options: field.options,
+              fields: field.fields,
+              itemType: field.itemType
+            };
+          } else {
+            console.warn("Campo inválido ignorado:", field);
+          }
+        });
 
-      if (success) {
-        toast({
-          title: "Personagem excluído",
-          description: `${character?.name} foi removido com sucesso.`,
-        })
+        // Criar novo objeto de template com campos convertidos
+        const convertedTemplate = {
+            ...templateResponse,  // Usar templateResponse diretamente
+            fields: fieldsObject
+          };
 
-        router.push("/dashboard/characters")
-      } else {
-        throw new Error("Erro ao excluir personagem")
+          setTemplate(convertedTemplate);
       }
     } catch (error) {
+      console.error("Erro ao carregar dados:", error)
       toast({
-        title: "Erro ao excluir",
-        description: "Não foi possível excluir o personagem. Tente novamente.",
+        title: "Erro ao carregar",
+        description: "Não foi possível carregar os dados do personagem",
         variant: "destructive",
       })
+      router.push("/dashboard/characters")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  loadData()
+}, [id, router, toast])
+
+
+  useEffect(() => {
+  if (sheet) {
+    console.log("Dados originais da ficha:", sheet.data);
+    const flattened = flattenSheetData(sheet.data);
+    console.log("Dados aplainados:", flattened);
+  }
+}, [sheet]);
+
+useEffect(() => {
+  if (editableSheetData && Object.keys(editableSheetData).length > 0) {
+    console.log("Dados editáveis (aplainados):", editableSheetData);
+    const unflattened = unflattenSheetData(editableSheetData);
+    console.log("Dados reconstruídos:", unflattened);
+  }
+}, [editableSheetData]);
+
+  const handleSaveCharacter = async () => {
+    if (!editableCharacter || !character) return
+
+    setIsSavingCharacter(true)
+    try {
+      const updatedCharacter = await CharacterService.updateCharacter(
+        character.id,
+        {
+          nomePersonagem: editableCharacter.nomePersonagem || character.nomePersonagem,
+          historia: editableCharacter.historia || character.historia,
+          imagem: editableCharacter.imagem || character.imagem
+        }
+      )
+      setCharacter(updatedCharacter)
+      toast({
+        title: "Sucesso",
+        description: "Personagem atualizado com sucesso",
+      })
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar personagem",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSavingCharacter(false)
+    }
+  }
+
+  const handleSaveSheet = async () => {
+    if (!sheet || !template || !character?.fichaId) {
+      toast({
+        title: "Erro",
+        description: "Dados incompletos para salvar a ficha",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log("Character FichaId:", character.fichaId);
+    console.log("Sheet ID:", sheet?.id);
+
+    setIsSavingSheet(true);
+    try {
+      const dataToSend = {
+        fields: unflattenSheetData(editableSheetData)
+      };
+
+      console.log("Atualizando ficha com ID:", character.fichaId);
+      
+      const response = await SheetService.updateSheet(character.fichaId, dataToSend);
+      
+      setSheet(response.data);
+      toast({
+        title: "Sucesso",
+        description: "Ficha atualizada com sucesso",
+      });
+    } catch (error: any) {
+      console.error("Erro detalhado:", error);
+      toast({
+        title: "Erro",
+        description: error.data?.message || "Falha ao atualizar ficha",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingSheet(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!character) return
+
+    setIsDeleting(true)
+    try {
+      await CharacterService.deleteCharacter(character.id)
+      if (character.fichaId) {
+        await SheetService.deleteSheet(character.fichaId)
+      }
+      toast({
+        title: "Sucesso",
+        description: "Personagem excluído com sucesso",
+      })
+      router.push("/dashboard/characters")
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao excluir personagem",
+        variant: "destructive",
+      })
+    } finally {
       setIsDeleting(false)
     }
   }
 
-  const renderFieldValue = (key: string, value: any): React.ReactNode => {
-    if (typeof value === "object" && value !== null) {
-      if (Array.isArray(value)) {
-        return (
-          <div className="flex flex-wrap gap-1">
-            {value.map((item, index) => (
-              <Badge key={index} variant="secondary">
-                {item}
-              </Badge>
-            ))}
-          </div>
-        )
-      } else {
-        return (
-          <div className="space-y-2">
-            {Object.entries(value).map(([subKey, subValue]) => (
-              <div key={subKey} className="flex justify-between">
-                <span className="font-medium capitalize">{subKey}:</span>
-                <span>{subValue}</span>
-              </div>
-            ))}
-          </div>
-        )
-      }
-    }
-    return <span>{value}</span>
-  }
+  const handleDeleteSheet = async () => {
+  if (!character?.fichaId) return;
 
-  if (isLoading) {
+  setIsDeleting(true);
+  try {
+    await SheetService.deleteSheet(character.fichaId);
+    
+    // Atualiza o estado removendo a referência da ficha
+    setSheet(null);
+    setEditableSheetData({});
+    setTemplate(null);
+    
+    // Atualiza o personagem para remover a fichaId
+    const updatedCharacter = await CharacterService.updateCharacter(character.id, {
+      ...character,
+      fichaId: null
+    });
+    setCharacter(updatedCharacter);
+    setEditableCharacter(updatedCharacter);
+
+    toast({
+      title: "Sucesso",
+      description: "Ficha excluída com sucesso",
+    });
+  } catch (error) {
+    toast({
+      title: "Erro",
+      description: "Falha ao excluir ficha",
+      variant: "destructive",
+    });
+  } finally {
+    setIsDeleting(false);
+  }
+};
+
+    const isTemplateReady = template && Object.keys(template.fields).length > 0;
+
+  if (isLoading || !character) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard/characters">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar
-            </Link>
-          </Button>
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-32"></div>
-          </div>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card className="animate-pulse">
-            <CardHeader>
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="h-3 bg-gray-200 rounded"></div>
-                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     )
   }
-
-  if (!character) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold mb-4">Personagem não encontrado</h2>
-        <Button asChild>
-          <Link href="/dashboard/characters">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar para Personagens
-          </Link>
-        </Button>
-      </div>
-    )
-  }
-
+  
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard/characters">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{character.name}</h1>
-            <p className="text-muted-foreground">{character.level}</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button asChild>
-            <Link href={`/dashboard/characters/${character.id}/edit`}>
-              <Edit className="mr-2 h-4 w-4" />
-              Editar
-            </Link>
-          </Button>
-
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Excluir
+      {/* Card do Personagem */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Informações do Personagem</CardTitle>
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleSaveCharacter}
+                disabled={isSavingCharacter}
+              >
+                {isSavingCharacter ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                <span className="ml-2">Salvar</span>
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5" />
-                  Excluir personagem
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  Tem certeza que deseja excluir {character.name}? Esta ação não pode ser desfeita.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-                >
-                  {isDeleting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Excluindo...
-                    </>
-                  ) : (
-                    "Sim, excluir"
-                  )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </div>
+              <Button 
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                <span className="ml-2">Excluir</span>
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={character.imagem || undefined} />
+              <AvatarFallback>
+                {character.nomePersonagem.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 space-y-2">
+              <Label>Nome do Personagem</Label>
+              <Input
+                value={editableCharacter.nomePersonagem || character.nomePersonagem}
+                onChange={(e) => setEditableCharacter({
+                  ...editableCharacter,
+                  nomePersonagem: e.target.value
+                })}
+              />
+            </div>
+          </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+          <div className="space-y-2">
+            <Label>História</Label>
+            <Textarea
+              value={editableCharacter.historia || character.historia || ""}
+              onChange={(e) => setEditableCharacter({
+                ...editableCharacter,
+                historia: e.target.value
+              })}
+              rows={5}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Seção da Ficha */}
+      {sheet && isTemplateReady ? (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Informações Básicas
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <Avatar className="w-16 h-16">
-                <AvatarImage src={character.image || "/placeholder.svg"} />
-                <AvatarFallback>
-                  {character.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+            <div className="flex justify-between items-center">
               <div>
-                <h3 className="font-semibold">{character.name}</h3>
-                <p className="text-sm text-muted-foreground">{character.level}</p>
+                <CardTitle>Ficha de Personagem</CardTitle>
+                <CardDescription>
+                  {template.system_name} (v{template.version})
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleSaveSheet}
+                  disabled={isSavingSheet}
+                >
+                  {isSavingSheet ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  <span className="ml-2">Salvar Ficha</span>
+                </Button>
+                <Button 
+                  variant="destructive"
+                  onClick={handleDeleteSheet}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                  <span className="ml-2">Excluir Ficha</span>
+                </Button>
               </div>
             </div>
-
-            <Separator />
-
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="font-medium">Sistema:</span>
-                <Badge>{character.system}</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Criado por:</span>
-                <span>{character.owner}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Última modificação:</span>
-                <span>{new Date(character.lastModified).toLocaleDateString("pt-BR")}</span>
-              </div>
-            </div>
+          </CardHeader>
+          <CardContent>
+            <DynamicFormRenderer
+              fields={template.fields}
+              values={editableSheetData}
+              onChange={setEditableSheetData}
+            />
           </CardContent>
         </Card>
-
-        <div className="md:col-span-2 space-y-6">
-          {character.history && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  História do Personagem
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm leading-relaxed">{character.history}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Atributos da Ficha
-              </CardTitle>
-              <CardDescription>Dados específicos do sistema {character.system}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {Object.entries(character.fields).map(([key, value]) => (
-                  <div key={key}>
-                    <h4 className="font-semibold mb-3 capitalize">{key}</h4>
-                    <div className="bg-muted/50 p-4 rounded-lg">{renderFieldValue(key, value)}</div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Ficha de Personagem</CardTitle>
+            <CardDescription>Este personagem ainda não possui uma ficha</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => router.push(`/dashboard/characters/${id}/create-sheet`)}
+              className="w-full"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Ficha para este Personagem
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

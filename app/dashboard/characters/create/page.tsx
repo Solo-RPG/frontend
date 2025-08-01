@@ -13,6 +13,13 @@ import { ArrowLeft, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { ImageUpload } from "@/components/ui/image-upload"
 import CharacterService from "@/lib/service/characters-service"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export default function CreateCharacterPage() {
   const [userInfo, setUserInfo] = useState(authService.getUserInfo())
@@ -22,6 +29,8 @@ export default function CreateCharacterPage() {
     history: "",
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [createdCharacterId, setCreatedCharacterId] = useState("")
   const router = useRouter()
   const { toast } = useToast()
 
@@ -43,25 +52,20 @@ export default function CreateCharacterPage() {
         description: "Por favor, insira um nome para o personagem",
         variant: "destructive",
       })
+      setIsLoading(false)
       return
     }
 
-    setIsLoading(true)
     try {
       const response = await CharacterService.createCharacter({
-        name: characterData.name,
-        history: characterData.history,
-        image: characterData.photo,
-        ownerId: userInfo.id
+        nomePersonagem: characterData.name,
+        historia: characterData.history,
+        imagem: characterData.photo,
       })
       
-      toast({
-        title: "Personagem criado!",
-        description: "O que você gostaria de fazer agora?",
-      })
-
-      // Redireciona para a página de escolha
-      router.push(`/dashboard/characters/${response.id}/after-create`)
+      setCreatedCharacterId(response.id)
+      setShowSuccessDialog(true)
+      
     } catch (error: any) {
       toast({
         title: "Erro ao criar personagem",
@@ -71,6 +75,14 @@ export default function CreateCharacterPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleCreateSheet = () => {
+    router.push(`/dashboard/characters/${createdCharacterId}/create-sheet`)
+  }
+
+  const handleGoToCharacters = () => {
+    router.push("/dashboard/characters")
   }
 
   const getAvatarFallback = () => {
@@ -152,6 +164,30 @@ export default function CreateCharacterPage() {
           )}
         </Button>
       </div>
+
+      {/* Success Dialog */}
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Personagem criado com sucesso!</DialogTitle>
+            <DialogDescription>
+              O que você gostaria de fazer agora?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col space-y-4 mt-4">
+            <Button onClick={handleCreateSheet} className="w-full">
+              Criar Ficha para este Personagem
+            </Button>
+            <Button 
+              onClick={handleGoToCharacters} 
+              variant="outline" 
+              className="w-full"
+            >
+              Ver Todos os Personagens
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
