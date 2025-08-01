@@ -29,7 +29,7 @@ export default function CreateCharacterPage() {
     if (!userInfo?.id) {
       toast({
         title: "Dados incompletos",
-        description: "Por favor, faça login e selecione um template",
+        description: "Por favor, faça login.",
         variant: "destructive",
       })
       return

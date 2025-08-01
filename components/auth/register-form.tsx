@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
+import { authService } from "@/lib/service/auth-service"
 
 export function RegisterForm() {
   const [name, setName] = useState("")
@@ -34,23 +35,18 @@ export function RegisterForm() {
     setIsLoading(true)
 
     try {
-      // Simular chamada de API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await authService.register(name, email, password)
 
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Sua conta foi criada. Faça login para continuar.",
+        description: "Faça login para continuar.",
       })
 
-      // Limpar formulário
-      setName("")
-      setEmail("")
-      setPassword("")
-      setConfirmPassword("")
-    } catch (error) {
+      router.push("/dashboard")
+    } catch (error: any) {
       toast({
         title: "Erro no cadastro",
-        description: "Ocorreu um erro ao criar sua conta. Tente novamente.",
+        description: error?.response?.data?.message ?? "Erro desconhecido",
         variant: "destructive",
       })
     } finally {

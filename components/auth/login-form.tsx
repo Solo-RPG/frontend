@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
+import { authService } from "@/lib/service/auth-service"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
@@ -22,11 +23,7 @@ export function LoginForm() {
     setIsLoading(true)
 
     try {
-      // Simular chamada de API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Simular login bem-sucedido
-      localStorage.setItem("user", JSON.stringify({ email, id: "1" }))
+      await authService.login(email, password) // ← chamada real ao backend
 
       toast({
         title: "Login realizado com sucesso!",
@@ -34,10 +31,10 @@ export function LoginForm() {
       })
 
       router.push("/dashboard")
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Erro no login",
-        description: "Verifique suas credenciais e tente novamente.",
+        description: error?.response?.data?.message ?? "Verifique suas credenciais.",
         variant: "destructive",
       })
     } finally {

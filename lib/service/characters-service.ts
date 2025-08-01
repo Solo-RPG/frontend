@@ -14,7 +14,7 @@ const CharacterService = {
    */
   async createCharacter(characterData: CharacterCreateRequest): Promise<Character> {
     const tokens = authService.getAuthTokens()
-    const response = await api.characters.post<Character>('/', characterData, {
+    const response = await api.characters.post<Character>('/api/characters/', characterData, {
       headers: {
         Authorization: `Bearer ${tokens?.token}`
       }
@@ -29,7 +29,7 @@ const CharacterService = {
    */
   async getCharacterById(id: string): Promise<Character> {
     try {
-      const response = await api.characters.get<Character>(`/${id}`);
+      const response = await api.characters.get<Character>(`/api/characters/${id}`);
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -42,7 +42,7 @@ const CharacterService = {
    */
   async getAllCharacters(): Promise<Character[]> {
     try {
-      const response = await api.characters.get<Character[]>('/');
+      const response = await api.characters.get<Character[]>('/api/characters/');
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -56,10 +56,11 @@ const CharacterService = {
    */
   async getCharactersByOwner(ownerId: string): Promise<Character[]> {
     try {
-      const response = await api.characters.get<Character[]>(`/by-owner/${ownerId}`);
+      const response = await api.characters.get(`/api/characters/by-owner/${ownerId}`);
       return response.data;
-    } catch (error: any) {
-      throw error.response?.data || error.message;
+    } catch (error) {
+      console.error("Error fetching characters:", error);
+      throw error;
     }
   },
 
@@ -74,7 +75,7 @@ const CharacterService = {
     updateData: CharacterUpdateRequest
   ): Promise<Character> {
     try {
-      const response = await api.characters.put<Character>(`/${id}`, updateData);
+      const response = await api.characters.put<Character>(`/api/characters/${id}`, updateData);
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -93,7 +94,7 @@ const CharacterService = {
   ): Promise<Character> {
     try {
       const response = await api.characters.put<Character>(
-        `/${characterId}/assign-ficha/${sheetId}`
+        `/api/characters/${characterId}/assign-ficha/${sheetId}`
       );
       return response.data;
     } catch (error: any) {
@@ -108,7 +109,7 @@ const CharacterService = {
    */
   async deleteCharacter(id: string): Promise<boolean> {
     try {
-      await api.characters.delete(`/${id}`);
+      await api.characters.delete(`/api/characters/${id}`);
       return true;
     } catch (error: any) {
       throw error.response?.data || error.message;
