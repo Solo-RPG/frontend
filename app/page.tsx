@@ -40,7 +40,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-300 to-orange-300 bg-clip-text text-transparent">
-                    RPG Manager
+                    SOLO RPG
                   </h1>
                   <p className="text-purple-200">Suas aventuras começam aqui</p>
                 </div>
