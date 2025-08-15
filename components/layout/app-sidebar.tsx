@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, Users, FileText, Plus, LogOut } from "lucide-react"
+import { Home, Users, FileText, Plus, LogOut, Moon, Sun } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 import {
   Sidebar,
@@ -16,6 +16,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { useToast } from "@/hooks/use-toast"
+import { useEffect, useState } from "react"
 
 const menuItems = [
   {
@@ -39,6 +40,30 @@ export function AppSidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const { toast } = useToast()
+  const [darkMode, setDarkMode] = useState(false)
+
+  // Carrega o tema salvo ao iniciar
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme')
+    if (savedTheme === 'dark') {
+      setDarkMode(true)
+      document.documentElement.classList.add('dark')
+    }
+  }, [])
+
+  // Alterna entre temas
+  const toggleTheme = () => {
+    const newDarkMode = !darkMode
+    setDarkMode(newDarkMode)
+    
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("user")
@@ -92,6 +117,15 @@ export function AppSidebar() {
                     <Plus />
                     <span>Nova Ficha</span>
                   </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  onClick={toggleTheme} 
+                  tooltip={darkMode ? "Modo Claro" : "Modo Escuro"}
+                >
+                  {darkMode ? <Sun /> : <Moon />}
+                  <span>{darkMode ? "Modo Claro" : "Modo Escuro"}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
