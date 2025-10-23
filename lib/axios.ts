@@ -2,21 +2,21 @@ import axios, { AxiosHeaders } from 'axios';
 import { authService } from './service/auth-service';
 
 const api_templates = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: "http://localhost:7000",
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 const api_sheets = axios.create({
-  baseURL: "http://localhost:8001",
+  baseURL: "http://localhost:9000",
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 const api_characters = axios.create({
-  baseURL: "http://localhost:8002",
+  baseURL: "http://localhost:8000",
   headers: {
     'Content-Type': 'application/json',
   },

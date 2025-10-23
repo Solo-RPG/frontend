@@ -58,6 +58,8 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
       return values[path];
     }
 
+    
+
     // Se não encontrou diretamente, tenta acessar como caminho aninhado
     const keys = path.split('.');
     let current: any = values;
@@ -83,8 +85,8 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
     const fieldName = field.name || key;
     // Remove .value dos caminhos se existir
     const path = parentPath ? 
-      `${parentPath.replace('.value', '')}.${fieldName}` : 
-      fieldName.replace('.value', '');
+  `${parentPath}.${fieldName}` : 
+  fieldName;
     
     const value = getValue(path);
     const displayName = getDisplayName(field, key);
