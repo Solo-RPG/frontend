@@ -61,9 +61,9 @@ export interface FieldConfig {
 
 export interface Character {
   id: string;
-  ownerId: string;
-  nomePersonagem: string;
-  fichaId?: string;
+  owner_id: string;
+  nome_personagem: string;
+  ficha_id?: string;
   historia?: string;
   imagem?: string;
 }

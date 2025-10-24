@@ -87,9 +87,10 @@ export default function CharactersPage() {
 
     return () => controller.abort()
   }, [userInfo?.id, toast])
-
+  
   const filteredCharacters = characters.filter((character) => {
-    return character.nomePersonagem.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+    console.log(character)
+    return character.nome_personagem.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   })
 
   const handleDeleteCharacter = async (id: string, e: React.MouseEvent) => {
@@ -205,7 +206,7 @@ export default function CharactersPage() {
                     <Avatar>
                       <AvatarImage src={character.imagem || "/placeholder.svg"} />
                       <AvatarFallback className="bg-purple-100 text-purple-600">
-                        {character.nomePersonagem
+                        {character.nome_personagem
                           .split(" ")
                           .map((n) => n[0])
                           .join("")
@@ -213,7 +214,7 @@ export default function CharactersPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <CardTitle className="text-lg text-gray-900">{character.nomePersonagem}</CardTitle>
+                      <CardTitle className="text-lg text-gray-900">{character.nome_personagem}</CardTitle>
                     </div>
                   </div>
                 </CardHeader>
