@@ -45,8 +45,8 @@ export default function CharacterDetailPage() {
         setEditableCharacter({...characterData})
 
         // Se existir ficha, carrega ela e o template
-        if (characterData.fichaId) {
-          const sheetResponse = await SheetService.getSheet(characterData.fichaId)
+        if (characterData.ficha_id) {
+          const sheetResponse = await SheetService.getSheet(characterData.ficha_id)
           setSheet(sheetResponse.data)
           setEditableSheetData({...sheetResponse.data.data})
           
@@ -77,7 +77,7 @@ export default function CharacterDetailPage() {
       const updatedCharacter = await CharacterService.updateCharacter(
         character.id,
         {
-          nomePersonagem: editableCharacter.nomePersonagem || character.nomePersonagem,
+          nome_personagem: editableCharacter.nome_personagem || character.nome_personagem,
           historia: editableCharacter.historia || character.historia,
           imagem: editableCharacter.imagem || character.imagem
         }
@@ -128,8 +128,8 @@ export default function CharacterDetailPage() {
     setIsDeleting(true)
     try {
       await CharacterService.deleteCharacter(character.id)
-      if (character.fichaId) {
-        await SheetService.deleteSheet(character.fichaId)
+      if (character.ficha_id) {
+        await SheetService.deleteSheet(character.ficha_id)
       }
       toast({
         title: "Sucesso",
@@ -194,10 +194,10 @@ export default function CharacterDetailPage() {
           <div className="space-y-2">
             <Label>Nome</Label>
             <Input
-              value={editableCharacter.nomePersonagem || character.nomePersonagem}
+              value={editableCharacter.nome_personagem || character.nome_personagem}
               onChange={(e) => setEditableCharacter({
                 ...editableCharacter,
-                nomePersonagem: e.target.value
+                nome_personagem: e.target.value
               })}
             />
           </div>

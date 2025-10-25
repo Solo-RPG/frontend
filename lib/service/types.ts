@@ -69,14 +69,14 @@ export interface Character {
 }
 
 export interface CharacterCreateRequest {
-  nomePersonagem: string;
+  nome_personagem: string;
   historia?: string;
   imagem?: string;
 }
 
 export interface CharacterUpdateRequest {
   [key: string]: any; // Mapeamento dinâmico para atualizações parciais
-  nomePersonagem?: string;
+  nome_personagem?: string;
   fichaId?: string | null;
   historia?: string;
   imagem?: string;

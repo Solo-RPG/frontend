@@ -148,10 +148,10 @@ class SheetService {
   try {
     const tokens = authService.getAuthTokens();
     const response = await api.sheets.put<SheetForm>(
-      `/api/sheets/${sheetId}`,
+      `/api/sheets/${sheetId}`,updateData,
       { headers: {
           Authorization: `Bearer ${tokens?.token}`
-        }, data: updateData.fields } // Envia no formato que o backend espera
+        }, }
     );
     return {
       data: response.data,
@@ -166,9 +166,6 @@ class SheetService {
   }
 }
 
-  /**
-   * Vincula um personagem a uma ficha
-   */
   async assignCharacter(
     sheetId: string, 
     characterId: string

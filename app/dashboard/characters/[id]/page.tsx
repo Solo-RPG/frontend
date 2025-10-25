@@ -47,8 +47,8 @@ useEffect(() => {
       setCharacter(characterData)
       setEditableCharacter({...characterData})
 
-      if (characterData.fichaId) {
-        const sheetResponse = await SheetService.getSheet(characterData.fichaId)
+      if (characterData.ficha_id) {
+        const sheetResponse = await SheetService.getSheet(characterData.ficha_id)
         console.log(sheetResponse.data.id)
         setSheet(sheetResponse.data)
         const flattenedData = flattenSheetData(sheetResponse.data.data);
@@ -69,9 +69,11 @@ useEffect(() => {
               required: field.required,
               min: field.min,
               max: field.max,
+              flex: field.flex,
+              span: field.span,
               options: field.options,
               fields: field.fields,
-              itemType: field.itemType
+              itemType: field.itemType,
             };
           } else {
             console.warn("Campo inválido ignorado:", field);
@@ -127,7 +129,7 @@ useEffect(() => {
       const updatedCharacter = await CharacterService.updateCharacter(
         character.id,
         {
-          nomePersonagem: editableCharacter.nomePersonagem || character.nomePersonagem,
+          nome_personagem: editableCharacter.nome_personagem || character.nome_personagem,
           historia: editableCharacter.historia || character.historia,
           imagem: editableCharacter.imagem || character.imagem
         }
@@ -149,7 +151,7 @@ useEffect(() => {
   }
 
   const handleSaveSheet = async () => {
-    if (!sheet || !template || !character?.fichaId) {
+    if (!sheet || !template || !character?.ficha_id) {
       toast({
         title: "Erro",
         description: "Dados incompletos para salvar a ficha",
@@ -158,7 +160,7 @@ useEffect(() => {
       return;
     }
 
-    console.log("Character FichaId:", character.fichaId);
+    console.log("Character ficha_id:", character.ficha_id);
     console.log("Sheet ID:", sheet?.id);
 
     setIsSavingSheet(true);
@@ -167,9 +169,9 @@ useEffect(() => {
         fields: unflattenSheetData(editableSheetData)
       };
 
-      console.log("Atualizando ficha com ID:", character.fichaId);
+      console.log("Atualizando ficha com ID:", character.ficha_id);
       
-      const response = await SheetService.updateSheet(character.fichaId, dataToSend);
+      const response = await SheetService.updateSheet(character.ficha_id, dataToSend);
       
       setSheet(response.data);
       toast({
@@ -194,8 +196,8 @@ useEffect(() => {
     setIsDeleting(true)
     try {
       await CharacterService.deleteCharacter(character.id)
-      if (character.fichaId) {
-        await SheetService.deleteSheet(character.fichaId)
+      if (character.ficha_id) {
+        await SheetService.deleteSheet(character.ficha_id)
       }
       toast({
         title: "Sucesso",
@@ -214,21 +216,21 @@ useEffect(() => {
   }
 
   const handleDeleteSheet = async () => {
-  if (!character?.fichaId) return;
+  if (!character?.ficha_id) return;
 
   setIsDeleting(true);
   try {
-    await SheetService.deleteSheet(character.fichaId);
+    await SheetService.deleteSheet(character.ficha_id);
     
     // Atualiza o estado removendo a referência da ficha
     setSheet(null);
     setEditableSheetData({});
     setTemplate(null);
     
-    // Atualiza o personagem para remover a fichaId
+    // Atualiza o personagem para remover a ficha_id
     const updatedCharacter = await CharacterService.updateCharacter(character.id, {
       ...character,
-      fichaId: null
+      ficha_id: null
     });
     setCharacter(updatedCharacter);
     setEditableCharacter(updatedCharacter);
@@ -297,16 +299,16 @@ useEffect(() => {
             <Avatar className="h-16 w-16">
               <AvatarImage src={character.imagem || undefined} />
               <AvatarFallback>
-                {character.nomePersonagem.substring(0, 2).toUpperCase()}
+                {character.nome_personagem.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-2">
               <Label>Nome do Personagem</Label>
               <Input
-                value={editableCharacter.nomePersonagem || character.nomePersonagem}
+                value={editableCharacter.nome_personagem || character.nome_personagem}
                 onChange={(e) => setEditableCharacter({
                   ...editableCharacter,
-                  nomePersonagem: e.target.value
+                  nome_personagem: e.target.value
                 })}
               />
             </div>

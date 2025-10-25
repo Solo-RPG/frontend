@@ -233,18 +233,6 @@ export default function CharactersPage() {
                       </Link>
                     </Button>
                     <Button
-                      asChild
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 border-gray-200 hover:bg-gray-50"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Link href={`/dashboard/characters/${character.id}/edit`}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar
-                      </Link>
-                    </Button>
-                    <Button
                       size="sm"
                       variant="outline"
                       className="text-red-600 hover:bg-red-50 border-red-200"
