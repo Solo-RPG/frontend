@@ -296,17 +296,26 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
 
       return (
         <div key={path} className="space-y-4">
+          <Label className="text-lg font-semibold">{displayName}</Label>
 
-          <div className={`space-y-4 grid gap-4 md:grid-cols-${cols}`}>
+          <div className={` grid gap-4 md:grid-cols-${cols}`}>
             {listValue.map((item: Record<string, unknown>, index: number) => (
-              <Card key={`${path}-${index}`} className="border mt-2">
-                <CardHeader className="flex flex-row items-center justify-between p-3">
-                  <CardTitle className="text-md">
-                    {displayName} {index + 1}
-                  </CardTitle>
+              <Card key={`${path}-${index}`} className="border">
+                <CardHeader className="flex flex-row items-center justify-between pl-6 pb-2">
+                  <Input
+                    type="text"
+                    value={(item.titulo as string) || ""}
+                    onChange={(e) => {
+                      const newList = [...listValue]
+                      newList[index] = { ...item, titulo: e.target.value }
+                      updateValue(path, newList)
+                    }}
+                    placeholder="Título"
+                    className="font-semibold text-md border-none shadow-none focus-visible:ring-0 px-0"
+                  />
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={() => {
                       const newList = listValue.filter((_, i) => i !== index)
@@ -317,16 +326,51 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
                   </Button>
                 </CardHeader>
 
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 pt-2">
                   <div>
-                    {field.fields &&
-                      Object.entries(field.fields).map(([subKey, subField]) =>
-                        renderField(
-                          subKey,
-                          subField,
-                          `${path}.${index}`
-                        ) 
-                      )}
+                    <textarea
+                      value={(item.descricao as string) || ""}
+                      onChange={(e) => {
+                        const newList = [...listValue]
+                        newList[index] = { ...item, descricao: e.target.value }
+                        updateValue(path, newList)
+                      }}
+                      placeholder="Descrição"
+                      className="w-full border rounded-md p-2 focus:ring-2 focus:ring-white focus:outline-none resize-y text-sm"
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Dano/Bônus</Label>
+                      <Input
+                        type="text"
+                        value={(item.dano_bonus as string) || ""}
+                        onChange={(e) => {
+                          const newList = [...listValue]
+                          newList[index] = { ...item, dano_bonus: e.target.value }
+                          updateValue(path, newList)
+                        }}
+                        placeholder="Ex: 1d6+2"
+                        className="text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label className="text-xs">Custo</Label>
+                      <Input
+                        type="text"
+                        value={(item.custo as string) || ""}
+                        onChange={(e) => {
+                          const newList = [...listValue]
+                          newList[index] = { ...item, custo: e.target.value }
+                          updateValue(path, newList)
+                        }}
+                        placeholder="Ex: 10 PO"
+                        className="text-sm"
+                      />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -337,23 +381,16 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
               variant="outline"
               size="sm"
               onClick={() => {
-                const newItem: Record<string, unknown> = {}
-                if (field.fields) {
-                  for (const [k, f] of Object.entries(field.fields)) {
-                    newItem[k] =
-                      f.default ??
-                      (f.type === "list"
-                        ? []
-                        : f.type === "objectlist"
-                        ? []
-                        : f.type === "object"
-                        ? {}
-                        : "")
-                  }
+                const newItem = {
+                  titulo: "",
+                  descricao: "",
+                  dano_bonus: "",
+                  custo: ""
                 }
                 const newList = [...listValue, newItem]
                 updateValue(path, newList)
               }}
+              className="w-full"
             >
               <Plus className="mr-2 h-4 w-4" />
               Adicionar {displayName}

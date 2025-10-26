@@ -86,7 +86,7 @@ const formSchema = z.object({
 
 type TemplateFormValues = z.infer<typeof formSchema>
 
-export function TemplateCreatorModal({ onSuccess }: { onSuccess: () => void }) {
+export function TemplateCreatorModal() {
   const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("fields")
   const [expandedField, setExpandedField] = useState<string | null>(null)
@@ -130,7 +130,6 @@ export function TemplateCreatorModal({ onSuccess }: { onSuccess: () => void }) {
         description: "O novo template foi adicionado ao sistema."
       })
       setOpen(false)
-      onSuccess()
     } catch (error) {
       toast({
         title: "Erro",
@@ -166,14 +165,27 @@ export function TemplateCreatorModal({ onSuccess }: { onSuccess: () => void }) {
       required: false
     }
     
-    form.setValue(`${fieldPath}.fields` as any, [...(field.fields || []), newField])
+    form.setValue(`${fieldPath}.fields` as any, [...(field.fields || []), newField], { 
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: false
+    })
+    // Força a re-renderização
+    form.trigger(fieldPath as any)
   }
 
   const removeNestedField = (fieldPath: `fields.${number}` | `fields.${number}.fields.${number}`, index: number) => {
     const field = form.getValues(fieldPath)
     const updatedFields = [...(field.fields || [])]
     updatedFields.splice(index, 1)
-    form.setValue(`${fieldPath}.fields` as any, updatedFields)
+    form.setValue(`${fieldPath}.fields` as any, updatedFields, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: false
+    })
+
+    // Força a re-renderização
+    form.trigger(fieldPath as any)
   }
 
   const onDragEnd = (result: DropResult) => {
@@ -201,6 +213,17 @@ export function TemplateCreatorModal({ onSuccess }: { onSuccess: () => void }) {
     return flattenFields(fields)
   }
 
+  const [expandedFields, setExpandedFields] = useState<Set<string>>(new Set())
+
+  const toggleExpanded = (id: string) => {
+    setExpandedFields(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(id)) newSet.delete(id)
+      else newSet.add(id)
+      return newSet
+    })
+  }
+
   const renderField = (
     fieldPath: `fields.${number}` | `fields.${number}.fields.${number}`,
     field: FieldConfigWithId,
@@ -208,8 +231,9 @@ export function TemplateCreatorModal({ onSuccess }: { onSuccess: () => void }) {
     provided?: DraggableProvided,
     isNested = false
   ) => {
-    const fieldId = fieldPath.split('.').pop()!
-    const isExpanded = expandedField === fieldId
+
+    const fieldId = fieldPath
+    const isExpanded = expandedFields.has(fieldId)
     const fieldType = form.watch(`${fieldPath}.type` as never)
 
     return (
@@ -223,7 +247,7 @@ export function TemplateCreatorModal({ onSuccess }: { onSuccess: () => void }) {
             )}
             <button
               type="button"
-              onClick={() => setExpandedField(isExpanded ? null : fieldId)}
+              onClick={() => toggleExpanded(fieldId)}
               className="font-medium flex items-center"
             >
               {isExpanded ? (
@@ -281,23 +305,6 @@ export function TemplateCreatorModal({ onSuccess }: { onSuccess: () => void }) {
                     </SelectContent>
                   </Select>
                   <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name={`${fieldPath}.required` as never}
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel>Obrigatório</FormLabel>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
                 </FormItem>
               )}
             />
@@ -364,8 +371,8 @@ export function TemplateCreatorModal({ onSuccess }: { onSuccess: () => void }) {
                     Adicionar Campo
                   </Button>
                 </div>
-                
-                {field.fields?.map((nestedField, nestedIndex) => (
+
+                {form.watch(`${fieldPath}.fields`)?.map((nestedField, nestedIndex) => (
                   <div key={nestedField.id}>
                     {renderField(
                       `${fieldPath}.fields.${nestedIndex}` as `fields.${number}.fields.${number}`,

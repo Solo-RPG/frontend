@@ -240,7 +240,6 @@ export default function TemplatesPage() {
                   <Link 
                     href={`/dashboard/templates/${template.id}`}
                     passHref
-                    legacyBehavior
                   >
                     <Button 
                       size="sm" 
@@ -248,7 +247,8 @@ export default function TemplatesPage() {
                       className="flex-1 bg-transparent"
                       asChild
                     >
-                      <a>Ver Detalhes</a>
+                      <a>Editar 2
+                      </a>
                     </Button>
                   </Link>
                   <CardContent>
