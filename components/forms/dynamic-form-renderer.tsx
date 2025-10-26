@@ -143,23 +143,21 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
           </div>
         )
       case "textarea":
-          return (
-            <div key={path} className="space-y-2">
-              <Label htmlFor={path}>
-                {displayName}
-                
-              </Label>
-              <textarea
-                id={path}
-                value={value as string || ""}
-                onChange={(e) => updateValue(path, e.target.value)}
-                placeholder={`Digite ${displayName}`}
-                required={field.required}
-                className="w-full border rounded-md p-2 focus:ring-2 focus:ring-white focus:outline-none resize-y"
-                rows={4}
-              />
-            </div>
-          )
+        return (
+          <div key={path} className="space-y-2">
+            <Label htmlFor={path}>{displayName}</Label>
+            <textarea
+              id={path}
+              value={(value as string) || ""}
+              onChange={(e) => updateValue(path, e.target.value)}
+              placeholder={`Digite ${displayName}`}
+              required={field.required}
+              className="w-full bg-background border-input border rounded-md p-2 focus:ring-2 focus:ring-ring focus:outline-none resize-y"
+              rows={4}
+            />
+          </div>
+        )
+
 
 
       case "number":
@@ -200,77 +198,81 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
         )
 
       case "list": {
-        const listValue = Array.isArray(value) ? value : []
-        return (
-          <div key={path} className="space-y-2">
-            <Label>
-              {displayName}
-  
-            </Label>
-            <div className="space-y-2">
-              {listValue.map((item: unknown, index: number) => (
-                <div key={`${path}-${index}`} className="flex items-center space-x-2">
-                  {field.options ? (
-                    <Select
-                      value={item as string}
-                      onValueChange={(val) => {
-                        const newList = [...listValue]
-                        newList[index] = val
-                        updateValue(path, newList)
-                      }}
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {field.options.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input
-                      className="flex-1"
-                      value={item as string}
-                      onChange={(e) => {
-                        const newList = [...listValue]
-                        newList[index] = e.target.value
-                        updateValue(path, newList)
-                      }}
-                      placeholder={`Item ${index + 1}`}
-                    />
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const newList = listValue.filter((_, i) => i !== index)
-                      updateValue(path, newList)
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const newList = [...listValue, field.options ? field.options[0] : ""]
-                  updateValue(path, newList)
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar {displayName}
-              </Button>
-            </div>
+  const listValue = Array.isArray(value) ? value : []
+
+  // Garante que cada item da lista siga a estrutura das opções
+  const ensureItemShape = (item: any) => {
+    const obj = typeof item === "object" && item !== null ? { ...item } : {}
+    field.options.forEach((opt: string) => {
+      if (!(opt in obj)) obj[opt] = ""
+    })
+    return obj
+  }
+
+  const normalizedList = listValue.map(ensureItemShape)
+
+  return (
+    <div key={path} className="space-y-2">
+      <Label>{displayName}</Label>
+
+      <div className="space-y-4">
+        {normalizedList.map((item, index) => (
+          <div
+            key={`${path}-${index}`}
+            className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 items-end"
+          >
+            {field.options.map((opt: string) => (
+              <div key={opt} className="flex flex-col">
+                {index == 0 && <Label className="text-xs mb-1">{opt}</Label>}
+                <Input
+                  value={item[opt]}
+                  onChange={(e) => {
+                    const newList = normalizedList.map((it, i) =>
+                      i === index ? { ...it, [opt]: e.target.value } : it
+                    )
+                    updateValue(path, newList)
+                  }}
+                />
+              </div>
+            ))}
+
+            {/* remover linha */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-12 h-10"
+              onClick={() => {
+                const newList = normalizedList.filter((_, i) => i !== index)
+                updateValue(path, newList)
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-        )
-      }
+        ))}
+
+        {/* adicionar nova linha */}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const emptyItem = field.options.reduce((acc: any, opt: string) => {
+              acc[opt] = ""
+              return acc
+            }, {})
+            updateValue(path, [...normalizedList, emptyItem])
+          }}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Adicionar
+        </Button>
+      </div>
+    </div>
+  )
+}
+
       
       case "object":
         if (!field.fields) return null
@@ -292,113 +294,104 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
         )
 
     case "objectlist": {
-      const listValue = Array.isArray(value) ? value : []
+  const listValue = Array.isArray(value) ? value : []
 
-      return (
-        <div key={path} className="space-y-4">
-          <Label className="text-lg font-semibold">{displayName}</Label>
+  return (
+    <div key={path} className="space-y-4">
+      <Label className="text-lg font-semibold">{displayName}</Label>
 
-          <div className={` grid gap-4 md:grid-cols-${cols}`}>
-            {listValue.map((item: Record<string, unknown>, index: number) => (
-              <Card key={`${path}-${index}`} className="border">
-                <CardHeader className="flex flex-row items-center justify-between pl-6 pb-2">
+      <div className={`grid gap-4 md:grid-cols-${cols}`}>
+        {listValue.map((item: Record<string, unknown>, index: number) => (
+          <Card key={`${path}-${index}`} className="border border-border bg-card">
+            <CardHeader className="flex flex-row items-center justify-between pl-6 pb-2">
+              <Input
+                type="text"
+                value={(item.titulo as string) || ""}
+                onChange={(e) => {
+                  const newList = [...listValue]
+                  newList[index] = { ...item, titulo: e.target.value }
+                  updateValue(path, newList)
+                }}
+                placeholder="Título"
+                className="font-semibold text-md border-none shadow-none bg-transparent focus-visible:ring-0 px-0"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const newList = listValue.filter((_, i) => i !== index)
+                  updateValue(path, newList)
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+
+            <CardContent className="space-y-3 pt-2">
+              <textarea
+                value={(item.descricao as string) || ""}
+                onChange={(e) => {
+                  const newList = [...listValue]
+                  newList[index] = { ...item, descricao: e.target.value }
+                  updateValue(path, newList)
+                }}
+                placeholder="Descrição"
+                className="w-full bg-background border-input border rounded-md p-2 focus:ring-2 focus:ring-ring focus:outline-none resize-y text-sm"
+                rows={3}
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Dano/Bônus</Label>
                   <Input
                     type="text"
-                    value={(item.titulo as string) || ""}
+                    value={(item.dano_bonus as string) || ""}
                     onChange={(e) => {
                       const newList = [...listValue]
-                      newList[index] = { ...item, titulo: e.target.value }
+                      newList[index] = { ...item, dano_bonus: e.target.value }
                       updateValue(path, newList)
                     }}
-                    placeholder="Título"
-                    className="font-semibold text-md border-none shadow-none focus-visible:ring-0 px-0"
+                    placeholder="Ex: 1d6+2"
+                    className="text-sm bg-background border-input"
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      const newList = listValue.filter((_, i) => i !== index)
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Custo</Label>
+                  <Input
+                    type="text"
+                    value={(item.custo as string) || ""}
+                    onChange={(e) => {
+                      const newList = [...listValue]
+                      newList[index] = { ...item, custo: e.target.value }
                       updateValue(path, newList)
                     }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </CardHeader>
+                    placeholder="Ex: 10 PO"
+                    className="text-sm bg-background border-input"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
 
-                <CardContent className="space-y-3 pt-2">
-                  <div>
-                    <textarea
-                      value={(item.descricao as string) || ""}
-                      onChange={(e) => {
-                        const newList = [...listValue]
-                        newList[index] = { ...item, descricao: e.target.value }
-                        updateValue(path, newList)
-                      }}
-                      placeholder="Descrição"
-                      className="w-full border rounded-md p-2 focus:ring-2 focus:ring-white focus:outline-none resize-y text-sm"
-                      rows={3}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Dano/Bônus</Label>
-                      <Input
-                        type="text"
-                        value={(item.dano_bonus as string) || ""}
-                        onChange={(e) => {
-                          const newList = [...listValue]
-                          newList[index] = { ...item, dano_bonus: e.target.value }
-                          updateValue(path, newList)
-                        }}
-                        placeholder="Ex: 1d6+2"
-                        className="text-sm"
-                      />
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <Label className="text-xs">Custo</Label>
-                      <Input
-                        type="text"
-                        value={(item.custo as string) || ""}
-                        onChange={(e) => {
-                          const newList = [...listValue]
-                          newList[index] = { ...item, custo: e.target.value }
-                          updateValue(path, newList)
-                        }}
-                        placeholder="Ex: 10 PO"
-                        className="text-sm"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const newItem = {
-                  titulo: "",
-                  descricao: "",
-                  dano_bonus: "",
-                  custo: ""
-                }
-                const newList = [...listValue, newItem]
-                updateValue(path, newList)
-              }}
-              className="w-full"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar {displayName}
-            </Button>
-          </div>
-        </div>
-      )
-    }
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            updateValue(path, [...listValue, { titulo: "", descricao: "", dano_bonus: "", custo: "" }])
+          }
+          className="w-full"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Adicionar {displayName}
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 
 

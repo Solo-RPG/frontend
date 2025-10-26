@@ -15,6 +15,7 @@ import { toast } from "@/hooks/use-toast"
 import { uploadTemplate } from "@/lib/service/templates-service"
 import { DragDropContext, Droppable, Draggable, DropResult, DraggableProvided, DroppableProvided } from "@hello-pangea/dnd"
 import { FieldConfig } from "@/lib/service/types"
+import { authService } from "@/lib/service/auth-service"
 
 interface MultiSelectProps {
   value: string[]
@@ -72,6 +73,7 @@ const fieldSchema: z.ZodType<FieldConfigWithId> = z.lazy(() =>
 
 const formSchema = z.object({
   system_name: z.string().min(1, "Nome do sistema é obrigatório"),
+  owner_id: z.string().optional(),
   version: z.string().min(1, "Versão é obrigatória"),
   description: z.string().optional(),
   fields: z.array(fieldSchema).min(1, "Adicione pelo menos um campo"),
@@ -91,10 +93,19 @@ export function TemplateCreatorModal() {
   const [activeTab, setActiveTab] = useState("fields")
   const [expandedField, setExpandedField] = useState<string | null>(null)
 
+  const getOwnerId = () => {
+    const userInfo = authService.getUserInfo()
+    if (userInfo) {
+      return userInfo.id
+    }
+    return ""
+  }
+
   const form = useForm<TemplateFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       system_name: "",
+      owner_id: getOwnerId(),
       version: "1.0",
       description: "",
       fields: [],

@@ -10,23 +10,26 @@ import { Label } from "@/components/ui/label"
 import { Plus, Trash, ChevronDown, ChevronUp, GripVertical, Edit } from "lucide-react"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { updateTemplate } from "@/lib/service/templates-service"
-import { toast } from "sonner"
+import { toast } from "@/hooks/use-toast"
 import { use } from "react"
+import { authService } from "@/lib/service/auth-service"
+import { redirect } from "next/navigation"
 
 type TemplateEditorModalProps = {
   templateJson: any
 }
 
 function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
-  const [open, setOpen] = useState(false)
   const [formData, setFormData] = useState({
     id: "",
     system_name: "",
+    owner_id: "",
     version: "1.0",
     fields: [] as any[]
   })
 
   const [expandedFields, setExpandedFields] = useState(new Set())
+  const [newOption, setNewOption] = useState("")
 
   useEffect(() => {
     if (!templateJson) return
@@ -41,6 +44,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
 
     setFormData({
       id: templateJson.id || "",
+      owner_id: authService.getUserInfo()?.id || templateJson.owner_id,
       system_name: templateJson.system_name || "",
       version: templateJson.version || "1.0",
       fields: addIdsToFields(templateJson.fields || [])
@@ -160,8 +164,11 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
   const handleSave = () => {
     updateTemplate(formData.id, formData)
     console.log("Dados salvos:", formData)
-    alert("Template atualizado com sucesso!")
-    setOpen(false)
+    toast({
+        title: "Template atualizado com sucesso!",
+        description: "O template foi atualizado ao sistema."
+      })
+    redirect('/dashboard/templates')
   }
 
   const getFieldValue = (path) => {
@@ -286,22 +293,60 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
               </div>
             )}
 
-            {(fieldType === "string" || fieldType === "list") && (
-              <div className="col-span-2">
-                <Label>Opções (uma por linha)</Label>
-                <Textarea
-                  placeholder="Humano&#10;Elfo&#10;Anão&#10;..."
-                  value={Array.isArray(field.options) ? field.options.join("\n") : ""}
-                  onChange={(e) => {
-                    const options = e.target.value
-                      .split("\n")
-                      .filter(opt => opt.trim())
-                    updateField(`${currentPath}.options`, options.length > 0 ? options : null)
-                  }}
-                  rows={3}
-                />
+           {(fieldType === "string" || fieldType === "list") && (
+            <div className="col-span-2 space-y-2">
+               {fieldType === "string" ? <Label>Opções</Label> : <Label>Colunas da Lista</Label>}
+
+              <div className="flex flex-wrap gap-2">
+                {(Array.isArray(field.options) ? field.options : []).map((opt, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-1 rounded-md"
+                  >
+                    <span>{opt}</span>
+                    <button
+                      type="button"
+                      className="text-sm hover:text-destructive"
+                      onClick={() => {
+                        const newOptions = field.options.filter((_, i) => i !== index)
+                        updateField(`${currentPath}.options`, newOptions.length ? newOptions : null)
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
-            )}
+
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Adicionar nova opção"
+                  value={newOption}
+                  onChange={(e) => setNewOption(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault()
+                      if (!newOption.trim()) return
+                      const updated = [...(field.options || []), newOption.trim()]
+                      updateField(`${currentPath}.options`, updated)
+                      setNewOption("")
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (!newOption.trim()) return
+                    const updated = [...(field.options || []), newOption.trim()]
+                    updateField(`${currentPath}.options`, updated)
+                    setNewOption("")
+                  }}
+                >
+                  Adicionar
+                </Button>
+              </div>
+            </div>
+          )}
 
             {(fieldType === "object" || fieldType === "objectlist") && (
               <div className="col-span-2">
@@ -335,18 +380,6 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <Edit className="mr-2 h-4 w-4" />
-          Editar Template
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Editar Template</DialogTitle>
-        </DialogHeader>
-
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -406,7 +439,6 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
             >
               Cancelar
             </Button>
@@ -415,8 +447,6 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
   )
 }
 

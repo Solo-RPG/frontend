@@ -22,6 +22,25 @@ export const getTemplates = async (): Promise<Template[]> => {
   }
 };
 
+export const getTemplatesById = async (): Promise<Template[]> => {
+  try {
+    const tokens = authService.getAuthTokens();
+    const response = await api.templates.get('/api/templates/by-id', {
+      headers: {
+        Authorization: `Bearer ${tokens?.token}`
+      }
+    });
+    // Garante que cada template tenha pelo menos um ID
+    return response.data.map((template: any) => ({
+      id: template.id || template._id?.toString(),
+      ...template
+    }));
+  } catch (error) {
+    console.error('Error fetching templates:', error);
+    throw error;
+  }
+};
+
 export const uploadTemplate = async (templateJson: Template): Promise<Template> => {
   try {
     // Envia o JSON diretamente, sem encapsular em outro objeto

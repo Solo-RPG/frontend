@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { uploadTemplate, getTemplates, deleteTemplate } from "@/lib/service/templates-service"
+import { uploadTemplate, deleteTemplate, getTemplatesById } from "@/lib/service/templates-service"
 import {Template} from "@/lib/service/types"
 import Link from "next/link"
 import { TemplateEditModal } from "@/components/forms/template-edit-form"
@@ -32,7 +32,7 @@ export default function TemplatesPage() {
   const fetchTemplates = async () => {
     try {
       setIsLoading(true)
-      const fetchedTemplates = await getTemplates()
+      const fetchedTemplates = await getTemplatesById()
       setTemplates(fetchedTemplates)
     } catch (error) {
       toast({
@@ -139,68 +139,74 @@ export default function TemplatesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Templates de Sistema</h1>
-          <p className="text-muted-foreground">Gerencie os templates de sistemas de RPG disponíveis</p>
+          <p className="text-muted-foreground">Gerencie os seus templates de sistemas de RPG</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Template
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Enviar Novo Template</DialogTitle>
-              <DialogDescription>
-                Cole o JSON do template do sistema de RPG abaixo. O template define a estrutura das fichas.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="template-json">JSON do Template</Label>
-                <Textarea
-                  id="template-json"
-                  value={newTemplateJson}
-                  onChange={(e) => setNewTemplateJson(e.target.value)}
-                  placeholder="Cole o JSON do template aqui..."
-                  rows={15}
-                  className="font-mono text-sm"
-                />
-              </div>
+        <div className="justify-self-end ml-auto flex space-x-2">
+          <Button href="/dashboard/templates/create" asChild className="justify-self-auto" >
+            <a><Plus className="mr-2 h-4 w-4" />
+            Novo Template</a>
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Template por JSON
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Enviar Novo Template</DialogTitle>
+                <DialogDescription>
+                  Cole o JSON do template do sistema de RPG abaixo. O template define a estrutura das fichas.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="template-json">JSON do Template</Label>
+                  <Textarea
+                    id="template-json"
+                    value={newTemplateJson}
+                    onChange={(e) => setNewTemplateJson(e.target.value)}
+                    placeholder="Cole o JSON do template aqui..."
+                    rows={15}
+                    className="font-mono text-sm"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label>Exemplo de Template</Label>
-                <div className="bg-muted p-4 rounded-lg">
-                  <pre className="text-sm overflow-x-auto">
-                    <code>{exampleJson}</code>
-                  </pre>
+                <div className="space-y-2">
+                  <Label>Exemplo de Template</Label>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <pre className="text-sm overflow-x-auto">
+                      <code>{exampleJson}</code>
+                    </pre>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleUploadTemplate} disabled={isUploading}>
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Enviar Template
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleUploadTemplate} disabled={isUploading}>
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Enviando...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Enviar Template
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -247,8 +253,7 @@ export default function TemplatesPage() {
                       className="flex-1 bg-transparent"
                       asChild
                     >
-                      <a>Editar 2
-                      </a>
+                      <p>Editar</p>
                     </Button>
                   </Link>
                   <CardContent>
@@ -258,7 +263,7 @@ export default function TemplatesPage() {
                         onSuccess={fetchTemplates}
                       >
                         <Button size="sm" variant="outline" className="flex-1">
-                          Editar
+                          Editar JSON
                         </Button>
                       </TemplateEditModal>
                     </div>
