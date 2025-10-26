@@ -5,13 +5,17 @@ import { getTemplateById } from "@/lib/service/templates-service";
 import { id } from "date-fns/locale";
 import { useEffect, useState, use } from "react";
 
-export default function page({params}: {params: {id: string}}) {
+export default function page({params}: {params: Promise<{id: string}>}) {
   const [templateJson, setTemplateJson] = useState<any>(null);
+  const id = use(params).id;
+
 
   useEffect(() => {
+
     async function fetchTemplate() {
+
       try {
-        const template = await getTemplateById(params.id);
+        const template = await getTemplateById(id);
         setTemplateJson(template); // se template já for JSON, não precisa .json()
         console.log("Template JSON:", template);
       } catch (error) {
@@ -20,7 +24,7 @@ export default function page({params}: {params: {id: string}}) {
     }
 
     fetchTemplate();
-  }, [params.id]);
+  }, [params]);
 
     return (
        <TemplateEditorModal templateJson={templateJson} />

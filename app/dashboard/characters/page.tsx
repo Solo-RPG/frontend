@@ -227,10 +227,7 @@ export default function CharactersPage() {
                       className="flex-1 border-gray-200 hover:bg-gray-50"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Link href={`/dashboard/characters/${character.id}`}>
-                        <Eye className="mr-2 h-4 w-4" />
                         Ver
-                      </Link>
                     </Button>
                     <Button
                       size="sm"

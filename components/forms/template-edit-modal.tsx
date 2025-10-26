@@ -11,90 +11,7 @@ import { Plus, Trash, ChevronDown, ChevronUp, GripVertical, Edit } from "lucide-
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { updateTemplate } from "@/lib/service/templates-service"
 import { toast } from "sonner"
-import { redirect } from "next/dist/server/api-utils"
-
-const exampleTemplate = {
-  "id": "8160f351-d6f0-4bc1-b372-70cda6ae4242",
-  "system_name": "RPG Medieval",
-  "version": "1.0",
-  "fields": [
-    {
-      "name": "Informações",
-      "type": "object",
-      "required": false,
-      "default_value": null,
-      "flex": "cols-3",
-      "span": "2",
-      "fields": [
-        {
-          "name": "Raça",
-          "type": "string",
-          "required": false,
-          "default_value": null
-        },
-        {
-          "name": "Classe",
-          "type": "string",
-          "required": false,
-          "default_value": "Guerreiro",
-          "options": [
-            "Bárbaro", "Bardo", "Bruxo", "Clérigo", "Druida",
-            "Escudeiro", "Feiticeiro", "Guerreiro", "Ladino",
-            "Mago", "Monge", "Paladino", "Patrulheiro"
-          ]
-        },
-        {
-          "name": "Level",
-          "type": "number",
-          "required": false,
-          "default_value": null
-        }
-      ]
-    },
-    {
-      "name": "Atributos",
-      "type": "object",
-      "required": false,
-      "flex": "cols-3",
-      "fields": [
-        {
-          "name": "Força",
-          "type": "object",
-          "flex": "row-2",
-          "fields": [
-            {
-              "name": "Valor",
-              "type": "string"
-            },
-            {
-              "name": "Bônus",
-              "type": "string"
-            }
-          ]
-        },
-        {
-          "name": "Destreza",
-          "type": "object",
-          "flex": "row-2",
-          "fields": [
-            {
-              "name": "Valor",
-              "type": "string"
-            },
-            {
-              "name": "Bônus",
-              "type": "string"
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
-
-interface props {
-  templateJson: any
-}
+import { use } from "react"
 
 type TemplateEditorModalProps = {
   templateJson: any
@@ -103,10 +20,12 @@ type TemplateEditorModalProps = {
 function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
   const [open, setOpen] = useState(false)
   const [formData, setFormData] = useState({
+    id: "",
     system_name: "",
     version: "1.0",
     fields: [] as any[]
   })
+
   const [expandedFields, setExpandedFields] = useState(new Set())
 
   useEffect(() => {
@@ -121,6 +40,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
     }
 
     setFormData({
+      id: templateJson.id || "",
       system_name: templateJson.system_name || "",
       version: templateJson.version || "1.0",
       fields: addIdsToFields(templateJson.fields || [])
@@ -238,7 +158,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
   }
 
   const handleSave = () => {
-    updateTemplate(templateData.id, formData)
+    updateTemplate(formData.id, formData)
     console.log("Dados salvos:", formData)
     alert("Template atualizado com sucesso!")
     setOpen(false)
