@@ -9,8 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, X } from "lucide-react"
 import { Template, Character, SheetFieldValue, SheetField, SheetCreateRequest } from "@/lib/service/types"
 import { StatusBar } from "../ui/statusbar"
+import { get } from "http"
+import AttributeField from "../ui/attributefield"
 
-type FieldType = 'string' | 'number' | 'boolean' | 'list' | 'object' | 'textarea' | 'objectlist' | 'status';
+type FieldType = 'string' | 'number' | 'boolean' | 'list' | 'object' | 'textarea' | 'objectlist' | 'status' | 'attribute';;
 
 export interface FieldDefinition {
   name: string
@@ -391,24 +393,41 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
       } 
 
       case "status": {
-        const statusValue = (getValue(path) as Record<string, any>) || { atual: fields.min, maximo: fields.max }
+      
+        const statusValue = {
+          value: getValue(path + ".value") as number,
+          max: getValue(path + ".max") as number
+        }
 
         return (
           <StatusBar
-            key ={path}
+            key={path}
             label={displayName}
-            value={statusValue.min}
+            value={statusValue.value}
             max={statusValue.max}
             onChange1={(newValue) =>
-              updateValue(path, { ...statusValue, min: newValue })
+              updateValue(path + ".value", newValue)
             }
             onChange2={(newMax) =>
-              updateValue(path, { ...statusValue, max: newMax })
+              updateValue(path + ".max", newMax)
             }
             color={color}
           />
         )
       }
+
+      case "attribute": {
+  const attrValue = getValue(path) ?? 10
+  return (
+    <AttributeField
+      key={path}
+      label={displayName}
+      value={attrValue}
+      onChange={(val) => updateValue(path, val)}
+    />
+  )
+}
+
 
 
 

@@ -261,6 +261,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
                   <SelectItem value="list">Lista</SelectItem>
                   <SelectItem value="textarea">Área de Texto</SelectItem>
                   <SelectItem value="status">Status</SelectItem>
+                  <SelectItem value="attribute">Atributo</SelectItem>
                 </SelectContent>
               </Select>
             </div>

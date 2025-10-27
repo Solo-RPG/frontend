@@ -15,7 +15,7 @@ interface StatusBarProps {
 }
 
 export function StatusBar({ label, value, max, onChange1, onChange2, color }: StatusBarProps) {
-  var percentage = Math.min((value / max) * 100, 100)
+  const percentage = Math.min((value / max) * 100, 100)
   const barColor = color || "red"
 
   return (

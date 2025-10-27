@@ -71,6 +71,8 @@ useEffect(() => {
               max: field.max,
               flex: field.flex,
               span: field.span,
+              cols: field.cols,
+              color: field.color,
               options: field.options,
               fields: field.fields,
               itemType: field.itemType,
