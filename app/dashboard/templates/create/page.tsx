@@ -7,7 +7,7 @@ export default function TemplateBuilderPage() {
     };
 
     return (
-       <TemplateCreatorModal />
+       <TemplateEditorModal templateJson={null} />
     );
 
 }

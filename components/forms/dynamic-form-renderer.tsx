@@ -8,11 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, X } from "lucide-react"
 import { Template, Character, SheetFieldValue, SheetField, SheetCreateRequest } from "@/lib/service/types"
-import { get } from "http"
-import { fi } from "date-fns/locale"
-import { use, useEffect } from "react"
+import { StatusBar } from "../ui/statusbar"
 
-type FieldType = 'string' | 'number' | 'boolean' | 'list' | 'object' | 'textarea' | 'objectlist';
+type FieldType = 'string' | 'number' | 'boolean' | 'list' | 'object' | 'textarea' | 'objectlist' | 'status';
 
 export interface FieldDefinition {
   name: string
@@ -23,6 +21,7 @@ export interface FieldDefinition {
   flex?: string
   span?: string
   cols?: string
+  color?: string
   options?: string[]
   fields?: Record<string, FieldDefinition>
   itemType?: string
@@ -67,7 +66,7 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
     // Se não encontrou diretamente, tenta acessar como caminho aninhado
     const keys = path.split('.');
     let current: any = values;
-    
+
     for (const key of keys) {
       if (current && typeof current === 'object') {
         current = current[key];
@@ -95,9 +94,10 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
     const value = getValue(path);
     const displayName = getDisplayName(field, key);
 
-    const flex = field.flex || "cols-2"
+    const flex = field.flex || "cols"
     const span = field.span || "1"
-    const cols = field.cols || "2"
+    const cols = field.cols || "3"
+    const color = field.color || "red"
 
     switch (field.type) {
       case "string":
@@ -157,8 +157,6 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
             />
           </div>
         )
-
-
 
       case "number":
         return (
@@ -271,9 +269,8 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
       </div>
     </div>
   )
-}
+      }
 
-      
       case "object":
         if (!field.fields) return null
         return (
@@ -284,7 +281,7 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className={`grid gap-4 md:grid-${flex}`}>
+              <div className={`grid gap-4 md:grid-${flex}-${cols}`}>
                 {Object.entries(field.fields).map(([subKey, subField]) =>
   renderField(subKey, subField, path),
 )}
@@ -293,105 +290,126 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
           </Card>
         )
 
-    case "objectlist": {
-  const listValue = Array.isArray(value) ? value : []
+      case "objectlist": {
+        const listValue = Array.isArray(value) ? value : []
 
-  return (
-    <div key={path} className="space-y-4">
-      <Label className="text-lg font-semibold">{displayName}</Label>
+        return (
+          <div key={path} className="space-y-4">
+            <Label className="text-lg font-semibold">{displayName}</Label>
 
-      <div className={`grid gap-4 md:grid-cols-${cols}`}>
-        {listValue.map((item: Record<string, unknown>, index: number) => (
-          <Card key={`${path}-${index}`} className="border border-border bg-card">
-            <CardHeader className="flex flex-row items-center justify-between pl-6 pb-2">
-              <Input
-                type="text"
-                value={(item.titulo as string) || ""}
-                onChange={(e) => {
-                  const newList = [...listValue]
-                  newList[index] = { ...item, titulo: e.target.value }
-                  updateValue(path, newList)
-                }}
-                placeholder="Título"
-                className="font-semibold text-md border-none shadow-none bg-transparent focus-visible:ring-0 px-0"
-              />
+            <div className={`grid gap-4 md:grid-${flex}-${cols}`}>
+              {listValue.map((item: Record<string, unknown>, index: number) => (
+                <Card key={`${path}-${index}`} className="border border-border bg-card">
+                  <CardHeader className="flex flex-row items-center justify-between pl-6 pb-2">
+                    <Input
+                      type="text"
+                      value={(item.titulo as string) || ""}
+                      onChange={(e) => {
+                        const newList = [...listValue]
+                        newList[index] = { ...item, titulo: e.target.value }
+                        updateValue(path, newList)
+                      }}
+                      placeholder="Título"
+                      className="font-semibold text-md border-none shadow-none bg-transparent focus-visible:ring-0 px-0"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const newList = listValue.filter((_, i) => i !== index)
+                        updateValue(path, newList)
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+
+                  <CardContent className="space-y-3 pt-2">
+                    <textarea
+                      value={(item.descricao as string) || ""}
+                      onChange={(e) => {
+                        const newList = [...listValue]
+                        newList[index] = { ...item, descricao: e.target.value }
+                        updateValue(path, newList)
+                      }}
+                      placeholder="Descrição"
+                      className="w-full bg-background border-input border rounded-md p-2 focus:ring-2 focus:ring-ring focus:outline-none resize-y text-sm"
+                      rows={3}
+                    />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Dano/Bônus</Label>
+                        <Input
+                          type="text"
+                          value={(item.dano_bonus as string) || ""}
+                          onChange={(e) => {
+                            const newList = [...listValue]
+                            newList[index] = { ...item, dano_bonus: e.target.value }
+                            updateValue(path, newList)
+                          }}
+                          placeholder="Ex: 1d6+2"
+                          className="text-sm bg-background border-input"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs">Custo</Label>
+                        <Input
+                          type="text"
+                          value={(item.custo as string) || ""}
+                          onChange={(e) => {
+                            const newList = [...listValue]
+                            newList[index] = { ...item, custo: e.target.value }
+                            updateValue(path, newList)
+                          }}
+                          placeholder="Ex: 10 PO"
+                          className="text-sm bg-background border-input"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                onClick={() => {
-                  const newList = listValue.filter((_, i) => i !== index)
-                  updateValue(path, newList)
-                }}
+                onClick={() =>
+                  updateValue(path, [...listValue, { titulo: "", descricao: "", dano_bonus: "", custo: "" }])
+                }
+                className="w-full"
               >
-                <X className="h-4 w-4" />
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar {displayName}
               </Button>
-            </CardHeader>
+            </div>
+          </div>
+        )
+      } 
 
-            <CardContent className="space-y-3 pt-2">
-              <textarea
-                value={(item.descricao as string) || ""}
-                onChange={(e) => {
-                  const newList = [...listValue]
-                  newList[index] = { ...item, descricao: e.target.value }
-                  updateValue(path, newList)
-                }}
-                placeholder="Descrição"
-                className="w-full bg-background border-input border rounded-md p-2 focus:ring-2 focus:ring-ring focus:outline-none resize-y text-sm"
-                rows={3}
-              />
+      case "status": {
+        const statusValue = (getValue(path) as Record<string, any>) || { atual: fields.min, maximo: fields.max }
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Dano/Bônus</Label>
-                  <Input
-                    type="text"
-                    value={(item.dano_bonus as string) || ""}
-                    onChange={(e) => {
-                      const newList = [...listValue]
-                      newList[index] = { ...item, dano_bonus: e.target.value }
-                      updateValue(path, newList)
-                    }}
-                    placeholder="Ex: 1d6+2"
-                    className="text-sm bg-background border-input"
-                  />
-                </div>
+        return (
+          <StatusBar
+            key ={path}
+            label={displayName}
+            value={statusValue.min}
+            max={statusValue.max}
+            onChange1={(newValue) =>
+              updateValue(path, { ...statusValue, min: newValue })
+            }
+            onChange2={(newMax) =>
+              updateValue(path, { ...statusValue, max: newMax })
+            }
+            color={color}
+          />
+        )
+      }
 
-                <div className="space-y-1">
-                  <Label className="text-xs">Custo</Label>
-                  <Input
-                    type="text"
-                    value={(item.custo as string) || ""}
-                    onChange={(e) => {
-                      const newList = [...listValue]
-                      newList[index] = { ...item, custo: e.target.value }
-                      updateValue(path, newList)
-                    }}
-                    placeholder="Ex: 10 PO"
-                    className="text-sm bg-background border-input"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            updateValue(path, [...listValue, { titulo: "", descricao: "", dano_bonus: "", custo: "" }])
-          }
-          className="w-full"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Adicionar {displayName}
-        </Button>
-      </div>
-    </div>
-  )
-}
 
 
 

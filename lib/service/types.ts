@@ -54,6 +54,9 @@ export interface FieldConfig {
   options?: string[]
   min?: number
   max?: number
+  flex?: string
+  span?: string
+  cols?: string
   fields?: Record<string, FieldConfig> | FieldConfig[]
 }
 

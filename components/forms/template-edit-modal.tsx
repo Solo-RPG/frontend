@@ -260,16 +260,26 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
                   <SelectItem value="objectlist">Lista de Objetos</SelectItem>
                   <SelectItem value="list">Lista</SelectItem>
                   <SelectItem value="textarea">Área de Texto</SelectItem>
+                  <SelectItem value="status">Status</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label>Flex (Layout)</Label>
+              <Label>Linha ou Coluna</Label>
               <Input
-                placeholder="Ex: cols-3, row-2"
+                placeholder="cols, row"
                 value={field.flex || ''}
                 onChange={(e) => updateField(`${currentPath}.flex`, e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label>Colunas</Label>
+              <Input
+                placeholder="Ex: 2, 3"
+                value={field.cols || ''}
+                onChange={(e) => updateField(`${currentPath}.cols`, e.target.value)}
               />
             </div>
 
@@ -348,26 +358,37 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
             </div>
           )}
 
-            {(fieldType === "object" || fieldType === "objectlist") && (
-              <div className="col-span-2">
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="text-sm font-medium">Campos do Objeto</h4>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => addNestedField(currentPath)}
-                  >
-                    <Plus className="mr-2 h-3 w-3" />
-                    Adicionar Campo
-                  </Button>
-                </div>
-
-                {field.fields && field.fields.map((nestedField, nestedIndex) => (
-                  renderField(nestedField, nestedIndex, currentPath, true)
-                ))}
+          {(fieldType === "object" || fieldType === "objectlist") && (
+            <div className="col-span-2">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="text-sm font-medium">Campos do Objeto</h4>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => addNestedField(currentPath)}
+                >
+                  <Plus className="mr-2 h-3 w-3" />
+                  Adicionar Campo
+                </Button>
               </div>
-            )}
+
+              {field.fields && field.fields.map((nestedField, nestedIndex) => (
+                renderField(nestedField, nestedIndex, currentPath, true)
+              ))}
+            </div>
+          )}
+
+          {(fieldType === "status") && (
+            <div>
+              <Label>Cor (Em Inglês)</Label>
+              <Input
+                placeholder={"Ex: Red"}
+                value={field.color || ''}
+                onChange={(e) => updateField(`${currentPath}.color`, e.target.value)}
+              />
+            </div>
+          )}
           </div>
         )}
       </div>
