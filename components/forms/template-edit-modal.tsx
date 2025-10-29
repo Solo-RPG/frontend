@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Plus, Trash, ChevronDown, ChevronUp, GripVertical, Edit } from "lucide-react"
+import { Plus, Trash, ChevronDown, ChevronUp, GripVertical, Edit, Clipboard, CheckCheck } from "lucide-react"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { updateTemplate } from "@/lib/service/templates-service"
 import { toast } from "@/hooks/use-toast"
 import { use } from "react"
 import { authService } from "@/lib/service/auth-service"
 import { redirect } from "next/navigation"
+import { Checkbox } from "../ui/checkbox"
 
 type TemplateEditorModalProps = {
   templateJson: any
@@ -25,6 +26,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
     system_name: "",
     owner_id: "",
     version: "1.0",
+    cols: "2",
     fields: [] as any[]
   })
 
@@ -46,6 +48,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
       id: templateJson.id || "",
       owner_id: authService.getUserInfo()?.id || templateJson.owner_id,
       system_name: templateJson.system_name || "",
+      cols: templateJson.cols || "2",
       version: templateJson.version || "1.0",
       fields: addIdsToFields(templateJson.fields || [])
     })
@@ -87,6 +90,20 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
     }))
   }
 
+  const cloneField = (index) => {
+    setFormData(prev => {
+      const fieldToClone = prev.fields[index]
+      const clonedField = {
+        ...JSON.parse(JSON.stringify(fieldToClone)),
+        id: `field-${Date.now()}`
+      }
+      return {
+        ...prev,
+        fields: [...prev.fields.slice(0, index + 1), clonedField, ...prev.fields.slice(index + 1)]
+      }
+    })
+  }
+
   const removeField = (index) => {
     setFormData(prev => ({
       ...prev,
@@ -103,10 +120,32 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
     })
   }
 
+  const moveNestedField = (parentPath, fromIndex, toIndex) => {
+    setFormData(prev => {
+      const newData = JSON.parse(JSON.stringify(prev))
+      const keys = parentPath.split('.')
+      let current = newData
+      
+      for (const key of keys) {
+        if (key.includes('[')) {
+          const arrayKey = key.substring(0, key.indexOf('['))
+          const index = parseInt(key.match(/\[(\d+)\]/)[1])
+          current = current[arrayKey][index]
+        } else {
+          current = current[key]
+        }
+      }
+      
+      const [moved] = current.fields.splice(fromIndex, 1)
+      current.fields.splice(toIndex, 0, moved)
+      return newData
+    })
+  }
+
   const addNestedField = (parentPath) => {
     const newField = {
       id: `nested-${Date.now()}`,
-      name: "",
+      name: " ",
       type: "string",
       required: false
     }
@@ -188,6 +227,13 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
     return current
   }
 
+
+  const capitalize = (str) => {
+    if (!str) return ""
+    if (str[0] == " ") return ""
+    return str.charAt(0).toUpperCase() + str.slice(1)
+ }
+
   const renderField = (field, index, path, isNested = false, provided = null) => {
     const fieldId = `${path}-${index}`
     const isExpanded = expandedFields.has(fieldId)
@@ -195,14 +241,14 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
     const fieldType = getFieldValue(`${currentPath}.type`)
 
     return (
-      <div key={field.id} className={`border rounded-lg p-4 bg-white shadow-sm ${isNested ? 'ml-6 mt-2' : ''}`}>
+      <div key={field.id} className={`border dark:border-gray-700 rounded-lg p-4 shadow-sm ${isNested ? 'ml-6 mt-2' : ''}`}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
-            {!isNested && provided && (
+     
               <div {...provided.dragHandleProps}>
                 <GripVertical className="h-4 w-4 text-gray-400 cursor-grab" />
               </div>
-            )}
+
             <button
               type="button"
               onClick={() => toggleExpanded(fieldId)}
@@ -213,23 +259,29 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
               ) : (
                 <ChevronDown className="h-4 w-4 mr-1" />
               )}
-              {isNested ? 'Subcampo' : 'Campo'} {index + 1}: {field.name || "Sem nome"}
+              {isNested ? 'Subcampo' : 'Campo'} {index + 1}: {capitalize(field.name) || "Sem nome"}
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              if (isNested) {
-                const parentPath = path
-                removeNestedField(parentPath, index)
-              } else {
-                removeField(index)
-              }
-            }}
-            className="text-red-500 hover:text-red-700"
-          >
-            <Trash className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-4 space-x-2">
+            <button
+              type="button"
+              onClick={() => {
+                cloneField(index)
+              }}
+            
+            >
+              <Clipboard className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                isNested ? removeNestedField(path, index) : removeField(index)
+              }}
+              className="text-red-500 hover:text-red-700"
+            >
+              <Trash className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {isExpanded && (
@@ -238,8 +290,17 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
               <Label>Nome do Campo</Label>
               <Input
                 placeholder="Ex: nome, raça, nível"
-                value={field.name || ''}
-                onChange={(e) => updateField(`${currentPath}.name`, e.target.value)}
+                value={capitalize(field.name) || ''}
+                onChange={(e) => updateField(`${currentPath}.name`, e.target.value.toLowerCase())}
+              />
+            </div>
+
+            <div className="mt-1 flex gap-4 flex-col">
+              <Label>Revelar o Titulo</Label>
+              <Checkbox
+                checked={field.show_label}
+                onCheckedChange={(checked) => updateField(`${currentPath}.show_label`, checked)}
+                defaultChecked={true}
               />
             </div>
 
@@ -256,7 +317,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
                   <SelectItem value="string">Texto</SelectItem>
                   <SelectItem value="number">Número</SelectItem>
                   <SelectItem value="boolean">Verdadeiro/Falso</SelectItem>
-                  <SelectItem value="object">Objeto (Grupo de campos)</SelectItem>
+                  <SelectItem value="object">Grupo de Campos</SelectItem>
                   <SelectItem value="objectlist">Lista de Objetos</SelectItem>
                   <SelectItem value="list">Lista</SelectItem>
                   <SelectItem value="textarea">Área de Texto</SelectItem>
@@ -267,28 +328,12 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
             </div>
 
             <div>
-              <Label>Linha ou Coluna</Label>
-              <Input
-                placeholder="cols, row"
-                value={field.flex || ''}
-                onChange={(e) => updateField(`${currentPath}.flex`, e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label>Colunas</Label>
-              <Input
-                placeholder="Ex: 2, 3"
-                value={field.cols || ''}
-                onChange={(e) => updateField(`${currentPath}.cols`, e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label>Span (Largura)</Label>
+              <Label>Largura do Campo (Quantas Colunas ocupa)</Label>
               <Input
                 placeholder="Ex: 2"
                 value={field.span || ''}
+                min={1}
+                max={formData.cols}
                 onChange={(e) => updateField(`${currentPath}.span`, e.target.value)}
               />
             </div>
@@ -360,6 +405,39 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
           )}
 
           {(fieldType === "object" || fieldType === "objectlist") && (
+            <div>
+              <Label>Forma de Distribuição dos Objetos</Label>
+              <Select
+                value={field.flex}
+                onValueChange={(value) => updateField(`${currentPath}.flex`, value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o layout" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem defaultChecked value="row">Linhas</SelectItem>
+                  <SelectItem value="cols">Colunas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {field.flex === "cols" && (
+            <div>
+              <Label>Colunas</Label>
+              <Input
+                placeholder="Ex: 2, 3"
+                value={field.cols}
+                defaultValue={1}
+                min={1}
+                max={6}
+                onChange={(e) => updateField(`${currentPath}.cols`, e.target.value)}
+              />
+            </div>
+          )}
+          
+
+          {(fieldType === "object" || fieldType === "objectlist") && (
             <div className="col-span-2">
               <div className="flex justify-between items-center mb-2">
                 <h4 className="text-sm font-medium">Campos do Objeto</h4>
@@ -374,9 +452,30 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
                 </Button>
               </div>
 
-              {field.fields && field.fields.map((nestedField, nestedIndex) => (
-                renderField(nestedField, nestedIndex, currentPath, true)
-              ))}
+              <DragDropContext onDragEnd={(result) => {
+                if (!result.destination) return
+                moveNestedField(currentPath, result.source.index, result.destination.index)
+              }}>
+                <Droppable droppableId={`nested-${fieldId}`}>
+                  {(provided) => (
+                    <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                      {field.fields && field.fields.map((nestedField, nestedIndex) => (
+                        <Draggable key={nestedField.id} draggableId={nestedField.id} index={nestedIndex}>
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                            >
+                              {renderField(nestedField, nestedIndex, currentPath, true, provided)}
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
             </div>
           )}
 
@@ -418,6 +517,14 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
                 placeholder="Ex: 1.0"
                 value={formData.version}
                 onChange={(e) => updateField('version', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Numero de Colunas da Pagina</Label>
+              <Input
+                placeholder="Ex: 2, 3"
+                value={formData.cols}
+                onChange={(e) => updateField('cols', e.target.value)}
               />
             </div>
           </div>

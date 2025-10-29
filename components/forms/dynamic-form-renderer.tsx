@@ -11,6 +11,8 @@ import { Template, Character, SheetFieldValue, SheetField, SheetCreateRequest } 
 import { StatusBar } from "../ui/statusbar"
 import { get } from "http"
 import AttributeField from "../ui/attributefield"
+import { tr } from "date-fns/locale"
+import { Textarea } from "../ui/textarea"
 
 type FieldType = 'string' | 'number' | 'boolean' | 'list' | 'object' | 'textarea' | 'objectlist' | 'status' | 'attribute';;
 
@@ -24,6 +26,7 @@ export interface FieldDefinition {
   span?: string
   cols?: string
   color?: string
+  show_label?: boolean
   options?: string[]
   fields?: Record<string, FieldDefinition>
   itemType?: string
@@ -32,10 +35,11 @@ export interface FieldDefinition {
 interface DynamicFormRendererProps {
   fields: Record<string, FieldDefinition>;
   values: Record<string, SheetFieldValue>;
+  cols?: string
   onChange: (values: Record<string, SheetFieldValue>) => void;
 }
 
-export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRendererProps) {
+export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicFormRendererProps) {
   const updateValue = (path: string, value: unknown) => {
     const newValues = { ...values };
     
@@ -80,34 +84,76 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
     return current;
   };
 
-
   const getDisplayName = (field: FieldDefinition, defaultName: string) => {
     return field.name || defaultName.split('_').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ')
   }
 
+  const capitalize = (s: string) => {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  const renderSubField = (subField: FieldDefinition, normalizedList: any[], index: number) => {
+    const path = `${subField.name}`;
+    const value = getValue(path);
+
+    const displayName = getDisplayName(subField, subField.name);
+
+    switch (subField.type) {
+      case "string" || "number":
+        return (
+          <Input
+            value={value as string || ""}
+            onChange={(e) => {
+              const newList = normalizedList.map((it, i) =>
+                i === index ? { ...it, [subField.name]: e.target.value } : it
+              );
+              updateValue(path, newList);
+            }}
+          />
+        );
+
+      case "textarea":
+        return (
+          <Textarea
+            value={value as string || ""}
+            onChange={(e) => {
+              const newList = normalizedList.map((it, i) =>
+                i === index ? { ...it, [subField.name]: e.target.value } : it
+              );
+              updateValue(path, newList);
+            }}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
+
   const renderField = (key: string, field: FieldDefinition, parentPath = "") => {
     const fieldName = field.name || key;
     const path = parentPath ? 
-  `${parentPath}.${fieldName}` : 
-  fieldName;
+    `${parentPath}.${fieldName}` : 
+    fieldName;
     
     const value = getValue(path);
     const displayName = getDisplayName(field, key);
 
-    const flex = field.flex || "cols"
-    const span = field.span || "1"
-    const cols = field.cols || "3"
+    const flex = field.flex
+    const span = field.span 
+    const cols = field.cols 
     const color = field.color || "red"
+    const showLabel = field.show_label
 
     switch (field.type) {
       case "string":
         if (field.options) {
           return (
-            <div key={path} className={`space-y-2 flex-row`}>
+            <div key={path} className={`space-y-2 flex-row col-span-${span}`}>
               <Label htmlFor={path}>
-                {displayName}
+                {showLabel && <Label>{capitalize(displayName)}</Label>}
         
               </Label>
               <Select 
@@ -131,8 +177,7 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
         return (
           <div key={path} className="space-y-2">
             <Label htmlFor={path}>
-              {displayName}
-              
+              {showLabel && <Label>{capitalize(displayName)}</Label>}
             </Label>
             <Input
               id={path}
@@ -144,10 +189,11 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
             />
           </div>
         )
+
       case "textarea":
         return (
-          <div key={path} className="space-y-2">
-            <Label htmlFor={path}>{displayName}</Label>
+          <div key={path} className={`space-y-2 col-span-${span}`}>
+            {showLabel && <Label htmlFor={path}>{capitalize(displayName)}</Label>}
             <textarea
               id={path}
               value={(value as string) || ""}
@@ -162,9 +208,9 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
 
       case "number":
         return (
-          <div key={path} className="space-y-2">
+          <div key={path} className={`space-y-2 col-span-${span}`}>
             <Label htmlFor={path}>
-              {displayName}
+              {showLabel && <Label>{displayName}</Label>}
            
               {field.min !== undefined && field.max !== undefined && (
                 <span className="text-sm text-muted-foreground ml-2">
@@ -198,199 +244,186 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
         )
 
       case "list": {
-  const listValue = Array.isArray(value) ? value : []
+          const listValue = Array.isArray(value) ? value : []
 
-  // Garante que cada item da lista siga a estrutura das opções
-  const ensureItemShape = (item: any) => {
-    const obj = typeof item === "object" && item !== null ? { ...item } : {}
-    field.options.forEach((opt: string) => {
-      if (!(opt in obj)) obj[opt] = ""
-    })
-    return obj
-  }
+          // Garante que cada item da lista siga a estrutura das opções
+          const ensureItemShape = (item: any) => {
+            const obj = typeof item === "object" && item !== null ? { ...item } : {}
+            field.options.forEach((opt: string) => {
+              if (!(opt in obj)) obj[opt] = ""
+            })
+            return obj
+          }
 
-  const normalizedList = listValue.map(ensureItemShape)
+          const normalizedList = listValue.map(ensureItemShape)
 
-  return (
-    <div key={path} className="space-y-2">
-      <Label>{displayName}</Label>
+          return (
+            <div key={path} className={`space-y-2 col-span-${span}`}>
+              {showLabel && <Label>{capitalize(displayName)}</Label>}
 
-      <div className="space-y-4">
-        {normalizedList.map((item, index) => (
-          <div
-            key={`${path}-${index}`}
-            className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 items-end"
-          >
-            {field.options.map((opt: string) => (
-              <div key={opt} className="flex flex-col">
-                {index == 0 && <Label className="text-xs mb-1">{opt}</Label>}
-                <Input
-                  value={item[opt]}
-                  onChange={(e) => {
-                    const newList = normalizedList.map((it, i) =>
-                      i === index ? { ...it, [opt]: e.target.value } : it
-                    )
-                    updateValue(path, newList)
-                  }}
-                />
-              </div>
-            ))}
+              <div className="space-y-4">
+                {normalizedList.map((item, index) => (
+                  <div
+                    key={`${path}-${index}`}
+                    className="flex overflow-x-auto gap-3 items-end"
+                  >
+                    {field.options.map((opt: string) => (
+                      <div key={opt} className="flex flex-col">
+                        {index == 0 && <Label className="text-xs mb-1">{opt}</Label>}
+                        <Input
+                          value={item[opt]}
+                          className=""
+                          onChange={(e) => {
+                            const newList = normalizedList.map((it, i) =>
+                              i === index ? { ...it, [opt]: e.target.value } : it
+                            )
+                            updateValue(path, newList)
+                          }}
+                        />
+                      </div>
+                    ))}
 
-            {/* remover linha */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-12 h-10"
-              onClick={() => {
-                const newList = normalizedList.filter((_, i) => i !== index)
-                updateValue(path, newList)
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-
-        {/* adicionar nova linha */}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            const emptyItem = field.options.reduce((acc: any, opt: string) => {
-              acc[opt] = ""
-              return acc
-            }, {})
-            updateValue(path, [...normalizedList, emptyItem])
-          }}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Adicionar
-        </Button>
-      </div>
-    </div>
-  )
-      }
-
-      case "object":
-        if (!field.fields) return null
-        return (
-          <Card key={path} className={`border mt-4 items-center col-span-${span}`}>
-            <CardHeader>
-              <CardTitle className="text-lg">
-                {displayName}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className={`grid gap-4 md:grid-${flex}-${cols}`}>
-                {Object.entries(field.fields).map(([subKey, subField]) =>
-  renderField(subKey, subField, path),
-)}
-              </div>
-            </CardContent>
-          </Card>
-        )
-
-      case "objectlist": {
-        const listValue = Array.isArray(value) ? value : []
-
-        return (
-          <div key={path} className="space-y-4">
-            <Label className="text-lg font-semibold">{displayName}</Label>
-
-            <div className={`grid gap-4 md:grid-${flex}-${cols}`}>
-              {listValue.map((item: Record<string, unknown>, index: number) => (
-                <Card key={`${path}-${index}`} className="border border-border bg-card">
-                  <CardHeader className="flex flex-row items-center justify-between pl-6 pb-2">
-                    <Input
-                      type="text"
-                      value={(item.titulo as string) || ""}
-                      onChange={(e) => {
-                        const newList = [...listValue]
-                        newList[index] = { ...item, titulo: e.target.value }
-                        updateValue(path, newList)
-                      }}
-                      placeholder="Título"
-                      className="font-semibold text-md border-none shadow-none bg-transparent focus-visible:ring-0 px-0"
-                    />
+                    {/* remover linha */}
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
+                      className="w-12 h-10"
                       onClick={() => {
-                        const newList = listValue.filter((_, i) => i !== index)
+                        const newList = normalizedList.filter((_, i) => i !== index)
                         updateValue(path, newList)
                       }}
                     >
                       <X className="h-4 w-4" />
                     </Button>
-                  </CardHeader>
+                  </div>
+                ))}
 
-                  <CardContent className="space-y-3 pt-2">
-                    <textarea
-                      value={(item.descricao as string) || ""}
-                      onChange={(e) => {
-                        const newList = [...listValue]
-                        newList[index] = { ...item, descricao: e.target.value }
-                        updateValue(path, newList)
-                      }}
-                      placeholder="Descrição"
-                      className="w-full bg-background border-input border rounded-md p-2 focus:ring-2 focus:ring-ring focus:outline-none resize-y text-sm"
-                      rows={3}
-                    />
+                {/* adicionar nova linha */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const emptyItem = field.options.reduce((acc: any, opt: string) => {
+                      acc[opt] = ""
+                      return acc
+                    }, {})
+                    updateValue(path, [...normalizedList, emptyItem])
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar
+                </Button>
+              </div>
+            </div>
+        )
+      }
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Dano/Bônus</Label>
-                        <Input
-                          type="text"
-                          value={(item.dano_bonus as string) || ""}
+      case "object":
+        if (!field.fields) return null
+
+        const className = `md:grid-${flex}-${cols}`
+
+        return (
+          <Card key={path} className={`border mt-4 items-center col-span-${span}`}>
+            <CardHeader>
+              <CardTitle className="text-lg">
+                {showLabel && <Label>{capitalize(displayName)}</Label>}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className={`grid gap-4 ${className}`}>
+                {Object.entries(field.fields).map(([subKey, subField]) =>
+                  renderField(subKey, subField, path),
+                )}
+              </div>
+            </CardContent>
+          </Card>
+      )
+
+      case "objectlist": {
+        const listValue = Array.isArray(value) ? value : []
+
+        // Garante que cada item tenha a estrutura de subcampos definida em field.fields
+        const ensureItemShape = (item: any) => {
+          const obj = typeof item === "object" && item !== null ? { ...item } : {}
+          field.fields.forEach((subField: any) => {
+            if (!(subField.name in obj)) obj[subField.name] = ""
+          })
+          return obj
+        }
+
+        const normalizedList = listValue.map(ensureItemShape)
+
+        return (
+          <div key={path} className={`space-y-2 col-span-${span}`}>
+            {showLabel && <Label>{capitalize(displayName)}</Label>}
+
+            <div className={`grid gap-4 md:grid-cols-${cols}`}>
+              {normalizedList.map((item, index) => (
+                <Card key={`${path}-${index}`} className="border p-4 relative">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => {
+                      const newList = normalizedList.filter((_, i) => i !== index)
+                      updateValue(path, newList)
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+
+                  <div className={`grid gap-4 md:grid-cols-2`}>
+                    {field.fields.map((subField: any) => (
+                      <div key={subField.name} className={`col-span-${subField.span || 1}`}>
+                        <Label className="text-xs mb-1">{capitalize(subField.name)}</Label>
+                        {subField.type === "string" ? (
+                          <Input
+                          value={item[subField.name]}
                           onChange={(e) => {
-                            const newList = [...listValue]
-                            newList[index] = { ...item, dano_bonus: e.target.value }
+                            const newList = normalizedList.map((it, i) =>
+                              i === index ? { ...it, [subField.name]: e.target.value } : it
+                            )
                             updateValue(path, newList)
                           }}
-                          placeholder="Ex: 1d6+2"
-                          className="text-sm bg-background border-input"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label className="text-xs">Custo</Label>
-                        <Input
-                          type="text"
-                          value={(item.custo as string) || ""}
+                        />) : (<Textarea
+                          value={item[subField.name]}
                           onChange={(e) => {
-                            const newList = [...listValue]
-                            newList[index] = { ...item, custo: e.target.value }
+                            const newList = normalizedList.map((it, i) =>
+                              i === index ? { ...it, [subField.name]: e.target.value } : it
+                            )
                             updateValue(path, newList)
                           }}
-                          placeholder="Ex: 10 PO"
-                          className="text-sm bg-background border-input"
-                        />
+                        />)}
                       </div>
-                    </div>
-                  </CardContent>
+                    ))}
+                  </div>
                 </Card>
               ))}
 
+              {/* Botão para adicionar novo item */}
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  updateValue(path, [...listValue, { titulo: "", descricao: "", dano_bonus: "", custo: "" }])
-                }
-                className="w-full"
+                onClick={() => {
+                  const emptyItem = field.fields.reduce((acc: any, subField: any) => {
+                    acc[subField.name] = ""
+                    return acc
+                  }, {})
+                  updateValue(path, [...normalizedList, emptyItem])
+                }}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Adicionar {displayName}
+                Adicionar
               </Button>
             </div>
           </div>
         )
-      } 
+      }
 
       case "status": {
       
@@ -417,28 +450,30 @@ export function DynamicFormRenderer({ fields, values, onChange }: DynamicFormRen
       }
 
       case "attribute": {
-  const attrValue = getValue(path) ?? 10
-  return (
-    <AttributeField
-      key={path}
-      label={displayName}
-      value={attrValue}
-      onChange={(val) => updateValue(path, val)}
-    />
+        const attrValue = getValue(path + ".value") as string ?? 10
+        const attrBonus = getValue(path + ".bonus") as string ?? "+0"
+        return (
+          <AttributeField
+            key={path}
+            className={`col-span-${span}`}
+            label={displayName}
+            value={attrValue}
+            bonus={attrBonus}
+            onChange={(val) => updateValue(path + ".value", val)}
+            onChangeBonus={(val) => updateValue(path + ".bonus", val)}
+          />
   )
-}
-
-
-
-
+      }
 
       default:
         return null
     }
   }
 
+  
+
   return (
-    <div className="space-y-4 grid gap-4 md:grid-cols-2">
+    <div className={`space-y-4 grid gap-4 md:grid-cols-${cols}`}>
       {Object.entries(fields).map(([key, field]) => renderField(key, field))}
     </div>
   )

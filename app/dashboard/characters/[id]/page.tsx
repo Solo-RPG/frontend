@@ -16,7 +16,10 @@ import { getTemplateById } from "@/lib/service/templates-service"
 import { DynamicFormRenderer, FieldDefinition } from "@/components/forms/dynamic-form-renderer"
 import { Character, SheetForm, Template } from "@/lib/service/types"
 import { flattenSheetData, unflattenSheetData} from "@/lib/service/sheet-helpers"
-import sheetsService from "@/lib/service/sheets-service"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import { ImageUpload } from "@/components/ui/image-upload"
+import { DialogTitle } from "@radix-ui/react-dialog"
+import { set } from "date-fns"
 
 export default function CharacterDetailPage() {
   const { id } = useParams()
@@ -38,90 +41,99 @@ export default function CharacterDetailPage() {
   const [isSavingSheet, setIsSavingSheet] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-useEffect(() => {
-  const loadData = async () => {
-    try {
-      setIsLoading(true)
-      
-      const characterData = await CharacterService.getCharacterById(id as string)
-      setCharacter(characterData)
-      setEditableCharacter({...characterData})
+  const isTemplateReady = template && Object.keys(template.fields).length > 0;
+  
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true)
+        
+        const characterData = await CharacterService.getCharacterById(id as string)
+        setCharacter(characterData)
+        setEditableCharacter({...characterData})
 
-      if (characterData.ficha_id) {
-        const sheetResponse = await SheetService.getSheet(characterData.ficha_id)
-        console.log(sheetResponse.data.id)
-        setSheet(sheetResponse.data)
-        const flattenedData = flattenSheetData(sheetResponse.data.data);
-        setEditableSheetData(flattenedData);
-        
-        const templateResponse = await getTemplateById(sheetResponse.data.template_id);
-        
-        // Converter array de campos para objeto com verificação segura
-        const fieldsArray = templateResponse.fields;
-        const fieldsObject: Record<string, FieldDefinition> = {};
-        
-        fieldsArray.forEach((field: any) => {
-          // Verificação robusta para garantir que o campo tem uma propriedade 'name'
-          if (field && field.name && typeof field.name === 'string') {
-            fieldsObject[field.name] = {
-              name: field.name,
-              type: field.type || 'string', // valor padrão
-              required: field.required,
-              min: field.min,
-              max: field.max,
-              flex: field.flex,
-              span: field.span,
-              cols: field.cols,
-              color: field.color,
-              options: field.options,
-              fields: field.fields,
-              itemType: field.itemType,
+        if (characterData.ficha_id) {
+          const sheetResponse = await SheetService.getSheet(characterData.ficha_id)
+          console.log(sheetResponse.data.id)
+          setSheet(sheetResponse.data)
+          const flattenedData = flattenSheetData(sheetResponse.data.data);
+          setEditableSheetData(flattenedData);
+          
+          const templateResponse = await getTemplateById(sheetResponse.data.template_id);
+          
+          // Converter array de campos para objeto com verificação segura
+          const fieldsArray = templateResponse.fields;
+          const fieldsObject: Record<string, FieldDefinition> = {};
+          
+          fieldsArray.forEach((field: any) => {
+            // Verificação robusta para garantir que o campo tem uma propriedade 'name'
+            if (field && field.name && typeof field.name === 'string') {
+              fieldsObject[field.name] = {
+                name: field.name,
+                type: field.type || 'string', // valor padrão
+                required: field.required,
+                min: field.min,
+                max: field.max,
+                flex: field.flex,
+                span: field.span,
+                cols: field.cols,
+                color: field.color,
+                show_label: field.show_label,
+                options: field.options,
+                fields: field.fields,
+                itemType: field.itemType,
+              };
+            } else {
+              console.warn("Campo inválido ignorado:", field);
+            }
+          });
+
+          // Criar novo objeto de template com campos convertidos
+          const convertedTemplate = {
+              ...templateResponse,  // Usar templateResponse diretamente
+              fields: fieldsObject
             };
-          } else {
-            console.warn("Campo inválido ignorado:", field);
-          }
-        });
 
-        // Criar novo objeto de template com campos convertidos
-        const convertedTemplate = {
-            ...templateResponse,  // Usar templateResponse diretamente
-            fields: fieldsObject
-          };
-
-          setTemplate(convertedTemplate);
+            setTemplate(convertedTemplate);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error)
+        toast({
+          title: "Erro ao carregar",
+          description: "Não foi possível carregar os dados do personagem",
+          variant: "destructive",
+        })
+        router.push("/dashboard/characters")
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error)
-      toast({
-        title: "Erro ao carregar",
-        description: "Não foi possível carregar os dados do personagem",
-        variant: "destructive",
-      })
-      router.push("/dashboard/characters")
-    } finally {
-      setIsLoading(false)
     }
-  }
 
-  loadData()
-}, [id, router, toast])
+    loadData()
+  }, [id, router, toast])
+
+  useEffect(() => {
+    if(editableCharacter && character) {
+      console.log("Editable Character:", editableCharacter);
+    }
+  }, [editableCharacter]);
 
 
   useEffect(() => {
-  if (sheet) {
-    console.log("Dados originais da ficha:", sheet.data);
-    const flattened = flattenSheetData(sheet.data);
-    console.log("Dados aplainados:", flattened);
-  }
-}, [sheet]);
+    if (sheet) {
+      console.log("Dados originais da ficha:", sheet.data);
+      const flattened = flattenSheetData(sheet.data);
+      console.log("Dados aplainados:", flattened);
+    }
+  }, [sheet]);
 
-useEffect(() => {
-  if (editableSheetData && Object.keys(editableSheetData).length > 0) {
-    console.log("Dados editáveis (aplainados):", editableSheetData);
-    const unflattened = unflattenSheetData(editableSheetData);
-    console.log("Dados reconstruídos:", unflattened);
-  }
-}, [editableSheetData]);
+  useEffect(() => {
+    if (editableSheetData && Object.keys(editableSheetData).length > 0) {
+      console.log("Dados editáveis (aplainados):", editableSheetData);
+      const unflattened = unflattenSheetData(editableSheetData);
+      console.log("Dados reconstruídos:", unflattened);
+    }
+  }, [editableSheetData]);
 
   const handleSaveCharacter = async () => {
     if (!editableCharacter || !character) return
@@ -133,7 +145,7 @@ useEffect(() => {
         {
           nome_personagem: editableCharacter.nome_personagem || character.nome_personagem,
           historia: editableCharacter.historia || character.historia,
-          imagem: editableCharacter.imagem || character.imagem
+          imagem: editableCharacter.imagem
         }
       )
       setCharacter(updatedCharacter)
@@ -250,9 +262,7 @@ useEffect(() => {
   } finally {
     setIsDeleting(false);
   }
-};
-
-    const isTemplateReady = template && Object.keys(template.fields).length > 0;
+  };
 
   if (isLoading || !character) {
     return (
@@ -298,12 +308,39 @@ useEffect(() => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={character.imagem || undefined} />
-              <AvatarFallback>
-                {character.nome_personagem.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Avatar className="h-24 w-24 hover:cursor-pointer">
+                  <AvatarImage src={editableCharacter.imagem || undefined} />
+                  <AvatarFallback className="hover:bg-zinc-400">
+                    {character.nome_personagem.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </DialogTrigger>
+                
+              <DialogContent>
+                <DialogTitle>Alterar Imagem do Personagem</DialogTitle>
+                <ImageUpload value={editableCharacter.imagem} onChange={(e) => {
+                  setEditableCharacter({
+                    ...editableCharacter,
+                    imagem: e
+                  }) }}/>
+                  <Button 
+                    onClick={handleSaveCharacter}
+                    disabled={isSavingCharacter}
+                  >
+                    {isSavingCharacter ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    <span className="ml-2">Salvar</span>
+                  </Button>
+               
+
+
+              </DialogContent>
+            </Dialog>
             <div className="flex-1 space-y-2">
               <Label>Nome do Personagem</Label>
               <Input
@@ -372,6 +409,7 @@ useEffect(() => {
             <DynamicFormRenderer
               fields={template.fields}
               values={editableSheetData}
+              cols={template.cols || "2"}
               onChange={setEditableSheetData}
             />
           </CardContent>

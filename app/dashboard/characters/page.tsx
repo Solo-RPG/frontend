@@ -125,7 +125,7 @@ export default function CharactersPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Meus Personagens</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Meus Personagens</h1>
           <Button disabled className="bg-purple-600 hover:bg-purple-700">
             <Plus className="mr-2 h-4 w-4" />
             Novo Personagem
@@ -171,8 +171,8 @@ export default function CharactersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Meus Personagens</h1>
-          <p className="text-gray-600">Gerencie seus personagens de RPG</p>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Meus Personagens</h1>
+          <p className="text-gray-600 dark:text-gray-400">Gerencie seus personagens de RPG</p>
         </div>
         <Button asChild className="bg-purple-600 hover:bg-purple-700">
           <Link href="/dashboard/characters/create">
@@ -214,7 +214,7 @@ export default function CharactersPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <CardTitle className="text-lg text-gray-900">{character.nome_personagem}</CardTitle>
+                      <CardTitle className="text-lg">{character.nome_personagem}</CardTitle>
                     </div>
                   </div>
                 </CardHeader>

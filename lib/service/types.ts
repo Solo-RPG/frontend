@@ -41,6 +41,7 @@ export interface TemplateBasicInfo {
   id: string;
   system_name: string;
   version: string;
+  cols?: string;
   description?: string;
   created_at?: string;
 }
@@ -57,6 +58,8 @@ export interface FieldConfig {
   flex?: string
   span?: string
   cols?: string
+  color?: string
+  showLabel?: boolean
   fields?: Record<string, FieldConfig> | FieldConfig[]
 }
 

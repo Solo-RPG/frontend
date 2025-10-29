@@ -1,15 +1,17 @@
 import axios, { AxiosHeaders } from 'axios';
 import { authService } from './service/auth-service';
 
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 const api_templates = axios.create({
-  baseURL: "http://localhost:7000",
+  baseURL: "http://localhost:8000",
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 const api_sheets = axios.create({
-  baseURL: "http://localhost:9000",
+  baseURL: "http://localhost:8000",
   headers: {
     'Content-Type': 'application/json',
   },

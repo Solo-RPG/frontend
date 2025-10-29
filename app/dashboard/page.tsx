@@ -83,7 +83,7 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Dashboard</h1>
         </div>
         
         <div className="grid gap-6 md:grid-cols-3">
@@ -130,8 +130,8 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Bem-vindo de volta! Gerencie suas fichas de RPG.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Dashboard</h1>
+          <p className="text-gray-400">Bem-vindo de volta! Gerencie suas fichas de RPG.</p>
         </div>
       </header>
 
@@ -160,7 +160,6 @@ export default function DashboardPage() {
   )
 }
 
-// Componente para cartão de estatísticas
 function StatCard({ title, value, description, icon }: {
   title: string
   value: number
@@ -170,12 +169,12 @@ function StatCard({ title, value, description, icon }: {
   return (
     <Card className="border-0 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600">{title}</CardTitle>
+        <CardTitle className="text-sm font-medium text-gray-600 dark:text-white">{title}</CardTitle>
         {icon}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold text-gray-900">{value}</div>
-        <p className="text-xs text-gray-500">{description}</p>
+        <div className="text-2xl font-bold text-gray-900 dark:text-white">{value}</div>
+        <p className="text-xs text-sm text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
   )
@@ -186,8 +185,8 @@ function RecentCharactersCard({ characters }: { characters: Character[] }) {
   return (
     <Card className="border-0 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-gray-900">Personagens Recentes</CardTitle>
-        <CardDescription className="text-gray-600">Seus personagens criados recentemente</CardDescription>
+        <CardTitle className="">Personagens Recentes</CardTitle>
+        <CardDescription className="">Seus personagens criados recentemente</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -196,16 +195,16 @@ function RecentCharactersCard({ characters }: { characters: Character[] }) {
               <Link 
                 key={character.id} 
                 href={`/dashboard/characters/${character.id}`}
-                className="block hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                className="block hover:bg-gray-50 dark:hover:text-black rounded-lg p-2 transition-colors"
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                     <Users className="h-5 w-5 text-purple-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{character.nomePersonagem}</p>
-                    <p className="text-sm text-gray-500">
-                      {character.fichaId ? "Ficha criada" : "Sem ficha vinculada"}
+                    <p className="font-medium ">{character.nome_personagem}</p>
+                    <p className="text-sm text-muted-foreground ">
+                      {character.ficha_id ? "Ficha criada" : "Sem ficha vinculada"}
                     </p>
                   </div>
                 </div>
@@ -229,8 +228,8 @@ function QuickActionsCard() {
   return (
     <Card className="border-0 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-gray-900">Ações Rápidas</CardTitle>
-        <CardDescription className="text-gray-600">
+        <CardTitle className="">Ações Rápidas</CardTitle>
+        <CardDescription className="">
           Acesse rapidamente as funcionalidades principais
         </CardDescription>
       </CardHeader>
@@ -263,7 +262,7 @@ function RecentActivityCard({ stats }: { stats: { characters: number, templates:
   return (
     <Card className="border-0 shadow-sm">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-gray-900">
+        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
           <TrendingUp className="h-5 w-5" />
           Atividade Recente
         </CardTitle>
@@ -322,7 +321,7 @@ function QuickActionButton({ href, icon, text, variant = 'default' }: {
       variant={variant}
       className={`w-full justify-start ${variant === 'outline' ? 'border-gray-200 hover:bg-gray-50 bg-transparent' : ''}`}
     >
-      <Link href={href}>
+      <Link href={href} className={`${variant === 'outline' ? 'dark:hover:text-black' : ''}`}>
         {icon}
         {text}
       </Link>
@@ -345,7 +344,7 @@ function ActivityItem({ color, text, time }: {
     <div className="flex items-center justify-between py-2">
       <div className="flex items-center space-x-3">
         <div className={`w-2 h-2 rounded-full ${colorClasses[color]}`} />
-        <span className="text-sm text-gray-700">{text}</span>
+        <span className="text-sm text-gray-700 dark:text-gray-300">{text}</span>
       </div>
       <span className="text-xs text-gray-500">{time}</span>
     </div>

@@ -94,5 +94,27 @@ const config: Config = {
   	}
   },
   plugins: [require("tailwindcss-animate")],
+  safelist: [
+	'md:grid-cols-1',
+	'md:grid-cols-2',
+	'md:grid-cols-3',
+	'md:grid-cols-4',
+	'md:grid-cols-5',
+	'md:grid-cols-6',
+	'md:grid-row',
+	'bg-red-600',
+	'bg-green-600',
+	'bg-blue-600',
+	'bg-yellow-600',
+	'bg-purple-600',
+	'bg-pink-600',
+	'bg-orange-600',
+	'bg-white-600',
+	'bg-cyan-600',
+	'dark:bg-zinc-700',
+	'col-span-1',
+	'col-span-2',
+	'col-span-3',
+	],
 };
 export default config;
