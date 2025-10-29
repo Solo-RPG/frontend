@@ -323,6 +323,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
                   <SelectItem value="textarea">Área de Texto</SelectItem>
                   <SelectItem value="status">Status</SelectItem>
                   <SelectItem value="attribute">Atributo</SelectItem>
+                  <SelectItem value="dadovida">Dado de Vida</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -335,6 +336,17 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
                 min={1}
                 max={formData.cols}
                 onChange={(e) => updateField(`${currentPath}.span`, e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label>Altura do Campo (Quantas Linhas ocupa)</Label>
+              <Input
+                placeholder="Ex: 2"
+                value={field.rows || ''}
+                min={1}
+                max={3}
+                onChange={(e) => updateField(`${currentPath}.rows`, e.target.value)}
               />
             </div>
 
@@ -482,11 +494,24 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
           {(fieldType === "status") && (
             <div>
               <Label>Cor (Em Inglês)</Label>
-              <Input
-                placeholder={"Ex: Red"}
-                value={field.color || ''}
-                onChange={(e) => updateField(`${currentPath}.color`, e.target.value)}
-              />
+              <Select
+                value={field.cor}
+                onValueChange={(value) => updateField(`${currentPath}.cor`, value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a cor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem defaultChecked value="red">Vermelho</SelectItem>
+                  <SelectItem value="green">Verde</SelectItem>
+                  <SelectItem value="blue">Azul</SelectItem>
+                  <SelectItem value="yellow">Amarelo</SelectItem>
+                  <SelectItem value="purple">Roxo</SelectItem>
+                  <SelectItem value="pink">Rosa</SelectItem>
+                  <SelectItem value="orange">Laranja</SelectItem>
+                  <SelectItem value="cyan">Ciano</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
           </div>

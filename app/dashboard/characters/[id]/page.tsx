@@ -77,6 +77,7 @@ export default function CharacterDetailPage() {
                 flex: field.flex,
                 span: field.span,
                 cols: field.cols,
+                rows: field.rows,
                 color: field.color,
                 show_label: field.show_label,
                 options: field.options,

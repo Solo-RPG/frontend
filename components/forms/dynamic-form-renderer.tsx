@@ -14,8 +14,10 @@ import AttributeField from "../ui/attributefield"
 import { tr } from "date-fns/locale"
 import { Textarea } from "../ui/textarea"
 import { Dialog, DialogTrigger, DialogContent, DialogTitle } from "../ui/dialog"
+import ColorCircle from "../ui/colorcircle"
+import { useState } from "react"
 
-type FieldType = 'string' | 'number' | 'boolean' | 'list' | 'object' | 'textarea' | 'objectlist' | 'status' | 'attribute';;
+type FieldType = 'string' | 'number' | 'boolean' | 'list' | 'object' | 'textarea' | 'objectlist' | 'status' | 'attribute' | 'dadovida'
 
 export interface FieldDefinition {
   name: string
@@ -26,6 +28,7 @@ export interface FieldDefinition {
   flex?: string
   span?: string
   cols?: string
+  rows?: string
   color?: string
   show_label?: boolean
   options?: string[]
@@ -95,9 +98,6 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
-  const renderSubField = () => {
-  };
-
   const renderField = (key: string, field: FieldDefinition, parentPath = "", isNested = false) => {
     const fieldName = field.name || key;
     const path = parentPath ? 
@@ -108,8 +108,9 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
     const displayName = getDisplayName(field, key);
 
     const flex = field.flex
-    const span = field.span 
+    const colSpan = field.span 
     const cols = field.cols 
+    const rowSpan = field.rows || 1
     const color = field.color || "red"
     const showLabel = field.show_label
 
@@ -117,7 +118,7 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
       case "string":
         if (field.options) {
           return (
-            <div key={path} className={`space-y-2 flex-row col-span-${span}`}>
+            <div key={path} className={`space-y-2 flex-row col-span-${colSpan} row-span-${rowSpan}`}>
               <Label htmlFor={path}>
                 {showLabel && <Label>{capitalize(displayName)}</Label>}
         
@@ -158,7 +159,7 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
 
       case "textarea":
         return (
-          <div key={path} className={`space-y-2 col-span-${span}`}>
+          <div key={path} className={`space-y-2 col-span-${colSpan} row-span-${rowSpan}`}>
             {showLabel && <Label htmlFor={path}>{capitalize(displayName)}</Label>}
             <textarea
               id={path}
@@ -174,7 +175,7 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
 
       case "number":
         return (
-          <div key={path} className={`space-y-2 col-span-${span}`}>
+          <div key={path} className={`space-y-2 col-span-${colSpan} row-span-${rowSpan}`}>
             <Label htmlFor={path}>
               {showLabel && <Label>{displayName}</Label>}
            
@@ -224,7 +225,7 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
           const normalizedList = listValue.map(ensureItemShape)
 
           return (
-            <div key={path} className={`space-y-2 col-span-${span}`}>
+            <div key={path} className={`space-y-2 col-span-${colSpan} row-span-${rowSpan}`}>
               {showLabel && <Label>{capitalize(displayName)}</Label>}
 
               <div className="space-y-4">
@@ -303,10 +304,10 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
         const className = `md:grid-${flex}-${cols}`
 
         return (
-          <Card key={path} className={`border mt-4 items-center col-span-${span}`}>
+          <Card key={path} className={`border mt-4 items-center col-span-${colSpan} row-span-${rowSpan}`}>
             <CardHeader>
               <CardTitle className="text-lg">
-                {showLabel && <Label>{capitalize(displayName)}</Label>}
+                {showLabel && <Label className="text-1xl">{capitalize(displayName)}</Label>}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -334,7 +335,7 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
         const normalizedList = listValue.map(ensureItemShape)
 
         return (
-          <div key={path} className={`space-y-2 col-span-${span}`}>
+          <div key={path} className={`space-y-2 col-span-${colSpan} row-span-${rowSpan}`}>
             {showLabel && <Label>{capitalize(displayName)}</Label>}
 
             <div className={`grid gap-4 md:grid-cols-${cols}`}>
@@ -432,7 +433,7 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
         return (
           <AttributeField
             key={path}
-            className={`col-span-${span}`}
+            className={`col-span-${colSpan} row-span-${rowSpan}`}
             label={displayName}
             value={attrValue}
             bonus={attrBonus}
@@ -441,6 +442,27 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
           />
   )
       }
+
+      case "dadovida": {
+          const [toggle, setToggle] = useState(false);
+
+           const colorCircles = []
+            
+            for(let i=0 ; i < 16; i++) {
+              colorCircles.push(<ColorCircle
+                onToggle={setToggle}
+              />)
+            }
+          
+
+          return (
+            <div className="grid gap-4 grid-cols-4">
+              {colorCircles}
+            </div>
+          )
+          
+      }
+
 
       default:
         return null

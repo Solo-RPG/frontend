@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Plus, Search, Eye, Edit, Trash2, Loader2 } from "lucide-react"
+import { Plus, Search, Eye, Edit, Trash2, Loader2, Clipboard } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useLocalStorage } from "@/hooks/use-auth"
 import { authService } from "@/lib/service/auth-service"
@@ -30,6 +30,7 @@ export default function CharactersPage() {
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const [isLoading, setIsLoading] = useState(true)
+  const [isCloning, setIsCloning] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isUserLoading, setIsUserLoading] = useState(true)
   const router = useRouter()
@@ -92,6 +93,38 @@ export default function CharactersPage() {
     console.log(character)
     return character.nome_personagem.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   })
+
+  const handleCloneCharacter = async (character: Character, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    try {
+      setIsCloning(true)
+      const cloneData = {
+        ...character,
+        id: undefined, // backend deve gerar novo id
+        nome_personagem: `${character.nome_personagem} (Cópia)`,
+        createdAt: new Date().toISOString(),
+      }
+
+      const newCharacter = await characterService.createCharacter(cloneData)
+      setCharacters(prev => [newCharacter, ...prev])
+
+      toast({
+        title: "Personagem clonado",
+        description: `"${character.nome_personagem}" foi duplicado com sucesso.`,
+      })
+    } catch (error) {
+      console.error(error)
+      toast({
+        title: "Erro ao clonar",
+        description: "Não foi possível duplicar o personagem.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsCloning(false)
+    }
+  } 
 
   const handleDeleteCharacter = async (id: string, e: React.MouseEvent) => {
     e.preventDefault()
@@ -221,18 +254,9 @@ export default function CharactersPage() {
                 <CardContent>
                   <div className="flex space-x-2">
                     <Button
-                      asChild
                       size="sm"
                       variant="outline"
-                      className="flex-1 border-gray-200 hover:bg-gray-50"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                        Ver
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 hover:bg-red-50 border-red-200"
+                      className="bg-zinc-900 text-red-600 border-zinc-900 hover:bg-red-600 hover:text-white"
                       onClick={(e) => handleDeleteCharacter(character.id, e)}
                       disabled={isDeleting}
                     >
@@ -240,6 +264,19 @@ export default function CharactersPage() {
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Trash2 className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-zinc-900 text-gray-600 border-zinc-900 hover:bg-gray-600 hover:text-white"
+                      onClick={(e) => handleCloneCharacter(character, e)}
+                      disabled={isCloning}
+                    >
+                      {isCloning ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Clipboard className="w-4 h-4" />
                       )}
                     </Button>
                   </div>
