@@ -13,6 +13,7 @@ import { get } from "http"
 import AttributeField from "../ui/attributefield"
 import { tr } from "date-fns/locale"
 import { Textarea } from "../ui/textarea"
+import { Dialog, DialogTrigger, DialogContent, DialogTitle } from "../ui/dialog"
 
 type FieldType = 'string' | 'number' | 'boolean' | 'list' | 'object' | 'textarea' | 'objectlist' | 'status' | 'attribute';;
 
@@ -94,45 +95,10 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
-  const renderSubField = (subField: FieldDefinition, normalizedList: any[], index: number) => {
-    const path = `${subField.name}`;
-    const value = getValue(path);
-
-    const displayName = getDisplayName(subField, subField.name);
-
-    switch (subField.type) {
-      case "string" || "number":
-        return (
-          <Input
-            value={value as string || ""}
-            onChange={(e) => {
-              const newList = normalizedList.map((it, i) =>
-                i === index ? { ...it, [subField.name]: e.target.value } : it
-              );
-              updateValue(path, newList);
-            }}
-          />
-        );
-
-      case "textarea":
-        return (
-          <Textarea
-            value={value as string || ""}
-            onChange={(e) => {
-              const newList = normalizedList.map((it, i) =>
-                i === index ? { ...it, [subField.name]: e.target.value } : it
-              );
-              updateValue(path, newList);
-            }}
-          />
-        );
-
-      default:
-        return null;
-    }
+  const renderSubField = () => {
   };
 
-  const renderField = (key: string, field: FieldDefinition, parentPath = "") => {
+  const renderField = (key: string, field: FieldDefinition, parentPath = "", isNested = false) => {
     const fieldName = field.name || key;
     const path = parentPath ? 
     `${parentPath}.${fieldName}` : 
@@ -267,21 +233,32 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
                     key={`${path}-${index}`}
                     className="flex overflow-x-auto gap-3 items-end"
                   >
+                    <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full">
+                        {field.options.map((opt: string) => item[opt])[0] || `Item ${index + 1}`}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-lg">
                     {field.options.map((opt: string) => (
-                      <div key={opt} className="flex flex-col">
-                        {index == 0 && <Label className="text-xs mb-1">{opt}</Label>}
-                        <Input
-                          value={item[opt]}
-                          className=""
-                          onChange={(e) => {
-                            const newList = normalizedList.map((it, i) =>
-                              i === index ? { ...it, [opt]: e.target.value } : it
-                            )
-                            updateValue(path, newList)
-                          }}
-                        />
-                      </div>
-                    ))}
+                      <div key={opt} className="flex flex-col">                        
+                          <DialogTitle>
+                            {<Label className="text-xs mb-1">{opt}</Label>}
+                          </DialogTitle>
+                          <Input
+                            value={item[opt]}
+                            className="mt-2"
+                            onChange={(e) => {
+                              const newList = normalizedList.map((it, i) =>
+                                i === index ? { ...it, [opt]: e.target.value } : it
+                              )
+                              updateValue(path, newList)
+                            }}
+                          />
+                      </div>))}
+                    </DialogContent>
+                  </Dialog>
+                    
 
                     {/* remover linha */}
                     <Button
@@ -470,10 +447,8 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
     }
   }
 
-  
-
   return (
-    <div className={`space-y-4 grid gap-4 md:grid-cols-${cols}`}>
+    <div className={`space-y-4 grid gap-4 md:grid-cols-${cols || '2'}`}>
       {Object.entries(fields).map(([key, field]) => renderField(key, field))}
     </div>
   )
