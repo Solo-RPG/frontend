@@ -38,12 +38,12 @@ export interface LoginResponse {
 export type Template = Record<string, any>;
 
 export interface TemplateBasicInfo {
-  id: string;
-  system_name: string;
-  version: string;
-  cols?: string;
-  description?: string;
-  created_at?: string;
+  id: string
+  system_name: string
+  version: string
+  cols?: string
+  description?: string
+  created_at?: string
 }
 
 export interface FieldConfig {

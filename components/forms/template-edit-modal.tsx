@@ -15,6 +15,7 @@ import { use } from "react"
 import { authService } from "@/lib/service/auth-service"
 import { redirect } from "next/navigation"
 import { Checkbox } from "../ui/checkbox"
+import { set } from "date-fns"
 
 type TemplateEditorModalProps = {
   templateJson: any
@@ -97,10 +98,38 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
         ...JSON.parse(JSON.stringify(fieldToClone)),
         id: `field-${Date.now()}`
       }
+
       return {
         ...prev,
         fields: [...prev.fields.slice(0, index + 1), clonedField, ...prev.fields.slice(index + 1)]
       }
+    })
+  }
+
+  const cloneNestedField = (parentPath, fromIndex, toIndex) => {
+    setFormData(prev => {
+      const newData = JSON.parse(JSON.stringify(prev))
+      const keys = parentPath.split('.')
+      let current = newData
+
+      for (const key of keys) {
+        if (key.includes('[')) {
+          const arrayKey = key.substring(0, key.indexOf('['))
+          const index = parseInt(key.match(/\[(\d+)\]/)[1])
+          current = current[arrayKey][index]
+        }
+        else {
+          current = current[key]
+        }
+      }
+
+      const fieldToClone = current.fields[fromIndex]
+      const clonedField = {
+        ...JSON.parse(JSON.stringify(fieldToClone)),
+        id: `field-${Date.now()}`
+      }
+      current.fields.splice(toIndex + 1, 0, clonedField)
+      return newData
     })
   }
 
@@ -265,7 +294,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
           <div className="flex items-center gap-4 space-x-2">
             <button
               type="button"
-              onClick={() => {
+              onClick={() => {isNested ? cloneNestedField(path, index, index) :
                 cloneField(index)
               }}
             
@@ -512,6 +541,18 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
                   <SelectItem value="cyan">Ciano</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+
+          {(fieldType === "dadovida") && (
+            <div>
+              <Label>Quantidade de Dados de Vida</Label>
+              <Input
+                placeholder={"4, 8, 12, 16"}
+                value={field.quantity || ''}
+                onChange={(e) => updateField(`${currentPath}.quantity`, e.target.value)}
+              />
             </div>
           )}
           </div>

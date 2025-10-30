@@ -80,6 +80,7 @@ export default function CharacterDetailPage() {
                 rows: field.rows,
                 color: field.color,
                 show_label: field.show_label,
+                quantity: field.quantity,
                 options: field.options,
                 fields: field.fields,
                 itemType: field.itemType,

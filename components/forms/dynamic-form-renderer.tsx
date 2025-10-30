@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, X } from "lucide-react"
+import { GripVertical, Plus, X } from "lucide-react"
 import { Template, Character, SheetFieldValue, SheetField, SheetCreateRequest } from "@/lib/service/types"
 import { StatusBar } from "../ui/statusbar"
 import { get } from "http"
@@ -16,6 +16,10 @@ import { Textarea } from "../ui/textarea"
 import { Dialog, DialogTrigger, DialogContent, DialogTitle } from "../ui/dialog"
 import ColorCircle from "../ui/colorcircle"
 import { useState } from "react"
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd"
+import { ObjectListField } from "../fields/objectlistfield"
+import { ListField } from "../fields/listfield"
+import { ObjectField } from "../fields/objectfield"
 
 type FieldType = 'string' | 'number' | 'boolean' | 'list' | 'object' | 'textarea' | 'objectlist' | 'status' | 'attribute' | 'dadovida'
 
@@ -31,6 +35,7 @@ export interface FieldDefinition {
   rows?: string
   color?: string
   show_label?: boolean
+  quantity?: number
   options?: string[]
   fields?: Record<string, FieldDefinition>
   itemType?: string
@@ -113,6 +118,8 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
     const rowSpan = field.rows || 1
     const color = field.color || "red"
     const showLabel = field.show_label
+
+
 
     switch (field.type) {
       case "string":
@@ -210,198 +217,51 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
           </div>
         )
 
-      case "list": {
-          const listValue = Array.isArray(value) ? value : []
-
-          // Garante que cada item da lista siga a estrutura das opções
-          const ensureItemShape = (item: any) => {
-            const obj = typeof item === "object" && item !== null ? { ...item } : {}
-            field.options.forEach((opt: string) => {
-              if (!(opt in obj)) obj[opt] = ""
-            })
-            return obj
-          }
-
-          const normalizedList = listValue.map(ensureItemShape)
-
-          return (
-            <div key={path} className={`space-y-2 col-span-${colSpan} row-span-${rowSpan}`}>
-              {showLabel && <Label>{capitalize(displayName)}</Label>}
-
-              <div className="space-y-4">
-                {normalizedList.map((item, index) => (
-                  <div
-                    key={`${path}-${index}`}
-                    className="flex overflow-x-auto gap-3 items-end"
-                  >
-                    <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="w-full">
-                        {field.options.map((opt: string) => item[opt])[0] || `Item ${index + 1}`}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-lg">
-                    {field.options.map((opt: string) => (
-                      <div key={opt} className="flex flex-col">                        
-                          <DialogTitle>
-                            {<Label className="text-xs mb-1">{opt}</Label>}
-                          </DialogTitle>
-                          <Input
-                            value={item[opt]}
-                            className="mt-2"
-                            onChange={(e) => {
-                              const newList = normalizedList.map((it, i) =>
-                                i === index ? { ...it, [opt]: e.target.value } : it
-                              )
-                              updateValue(path, newList)
-                            }}
-                          />
-                      </div>))}
-                    </DialogContent>
-                  </Dialog>
-                    
-
-                    {/* remover linha */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-12 h-10"
-                      onClick={() => {
-                        const newList = normalizedList.filter((_, i) => i !== index)
-                        updateValue(path, newList)
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-
-                {/* adicionar nova linha */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const emptyItem = field.options.reduce((acc: any, opt: string) => {
-                      acc[opt] = ""
-                      return acc
-                    }, {})
-                    updateValue(path, [...normalizedList, emptyItem])
-                  }}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar
-                </Button>
-              </div>
-            </div>
-        )
-      }
+      case "list":
+        return (
+          <ListField
+            path={path}
+            value={value}
+            field={field}
+            colSpan={colSpan}
+            rowSpan={rowSpan}
+            showLabel={showLabel}
+            displayName={displayName}
+            updateValue={updateValue}
+          />
+      )
 
       case "object":
-        if (!field.fields) return null
-
-        const className = `md:grid-${flex}-${cols}`
-
         return (
-          <Card key={path} className={`border mt-4 items-center col-span-${colSpan} row-span-${rowSpan}`}>
-            <CardHeader>
-              <CardTitle className="text-lg">
-                {showLabel && <Label className="text-1xl">{capitalize(displayName)}</Label>}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className={`grid gap-4 ${className}`}>
-                {Object.entries(field.fields).map(([subKey, subField]) =>
-                  renderField(subKey, subField, path),
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ObjectField
+            path={path}
+            field={field}
+            colSpan={colSpan}
+            rowSpan={rowSpan}
+            showLabel={showLabel}
+            displayName={displayName}
+            renderField={renderField}
+            flex={flex}
+            cols={cols}
+          />
       )
 
       case "objectlist": {
-        const listValue = Array.isArray(value) ? value : []
-
-        // Garante que cada item tenha a estrutura de subcampos definida em field.fields
-        const ensureItemShape = (item: any) => {
-          const obj = typeof item === "object" && item !== null ? { ...item } : {}
-          field.fields.forEach((subField: any) => {
-            if (!(subField.name in obj)) obj[subField.name] = ""
-          })
-          return obj
-        }
-
-        const normalizedList = listValue.map(ensureItemShape)
-
         return (
-          <div key={path} className={`space-y-2 col-span-${colSpan} row-span-${rowSpan}`}>
-            {showLabel && <Label>{capitalize(displayName)}</Label>}
-
-            <div className={`grid gap-4 md:grid-cols-${cols}`}>
-              {normalizedList.map((item, index) => (
-                <Card key={`${path}-${index}`} className="border p-4 relative">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => {
-                      const newList = normalizedList.filter((_, i) => i !== index)
-                      updateValue(path, newList)
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-
-                  <div className={`grid gap-4 md:grid-cols-2`}>
-                    {field.fields.map((subField: any) => (
-                      <div key={subField.name} className={`col-span-${subField.span || 1}`}>
-                        <Label className="text-xs mb-1">{capitalize(subField.name)}</Label>
-                        {subField.type === "string" ? (
-                          <Input
-                          value={item[subField.name]}
-                          onChange={(e) => {
-                            const newList = normalizedList.map((it, i) =>
-                              i === index ? { ...it, [subField.name]: e.target.value } : it
-                            )
-                            updateValue(path, newList)
-                          }}
-                        />) : (<Textarea
-                          value={item[subField.name]}
-                          onChange={(e) => {
-                            const newList = normalizedList.map((it, i) =>
-                              i === index ? { ...it, [subField.name]: e.target.value } : it
-                            )
-                            updateValue(path, newList)
-                          }}
-                        />)}
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              ))}
-
-              {/* Botão para adicionar novo item */}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const emptyItem = field.fields.reduce((acc: any, subField: any) => {
-                    acc[subField.name] = ""
-                    return acc
-                  }, {})
-                  updateValue(path, [...normalizedList, emptyItem])
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar
-              </Button>
-            </div>
-          </div>
+          <ObjectListField
+            key={path}
+            path={path}
+            value={value}
+            field={field}
+            colSpan={colSpan}
+            rowSpan={rowSpan}
+            showLabel={showLabel}
+            displayName={displayName}
+            updateValue={updateValue}
+          />
         )
       }
+
 
       case "status": {
       
@@ -446,17 +306,19 @@ export function DynamicFormRenderer({ fields, values, cols, onChange }: DynamicF
       case "dadovida": {
           const [toggle, setToggle] = useState(false);
 
-           const colorCircles = []
-            
-            for(let i=0 ; i < 16; i++) {
-              colorCircles.push(<ColorCircle
-                onToggle={setToggle}
-              />)
-            }
+          const colorCircles = []
+
+          for(let i=0 ; i < field.quantity; i++) {
+            colorCircles.push(<ColorCircle key={i}
+              value={getValue(`${path}.circle_${i+1}`) as boolean || false}
+              onToggle={(e) => updateValue(`${path}.circle_${i+1}`, e)}
+            />)
+          }
           
 
           return (
-            <div className="grid gap-4 grid-cols-4">
+            <div key={path} className={`grid w-full gap-4 justify-self-center justify-items-center items-center grid-cols-${cols} border rounded-md p-8 pl-16 pr-16`}>
+              <h1 className=" col-span-4 text-lg mb-2">Dados de Vida</h1>
               {colorCircles}
             </div>
           )
