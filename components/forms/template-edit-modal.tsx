@@ -2,20 +2,18 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Plus, Trash, ChevronDown, ChevronUp, GripVertical, Edit, Clipboard, CheckCheck } from "lucide-react"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { updateTemplate } from "@/lib/service/templates-service"
 import { toast } from "@/hooks/use-toast"
-import { use } from "react"
 import { authService } from "@/lib/service/auth-service"
 import { redirect } from "next/navigation"
 import { Checkbox } from "../ui/checkbox"
-import { set } from "date-fns"
+import OptionsEditor from "../fields/optionsfield"
+import { capitalize } from "@/lib/utils"
 
 type TemplateEditorModalProps = {
   templateJson: any
@@ -28,11 +26,11 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
     owner_id: "",
     version: "1.0",
     cols: "2",
+    status: [] as any[],
     fields: [] as any[]
   })
 
   const [expandedFields, setExpandedFields] = useState(new Set())
-  const [newOption, setNewOption] = useState("")
 
   useEffect(() => {
     if (!templateJson) return
@@ -50,6 +48,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
       owner_id: authService.getUserInfo()?.id || templateJson.owner_id,
       system_name: templateJson.system_name || "",
       cols: templateJson.cols || "2",
+      status: templateJson.status || [],
       version: templateJson.version || "1.0",
       fields: addIdsToFields(templateJson.fields || [])
     })
@@ -60,7 +59,8 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
       const newData = JSON.parse(JSON.stringify(prev))
       const keys = path.split('.')
       let current = newData
-      
+
+      // Navega até o campo alvo
       for (let i = 0; i < keys.length - 1; i++) {
         const key = keys[i]
         if (key.includes('[')) {
@@ -71,10 +71,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
           current = current[key]
         }
       }
-      
-      const lastKey = keys[keys.length - 1]
-      current[lastKey] = value
-      
+
       return newData
     })
   }
@@ -87,7 +84,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
         name: "",
         type: "string",
         required: false
-      }]
+      }],
     }))
   }
 
@@ -134,10 +131,13 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
   }
 
   const removeField = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      fields: prev.fields.filter((_, i) => i !== index)
-    }))
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        fields: prev.fields.filter((_, i) => i !== index)
+      }
+      return newData
+    })
   }
 
   const moveField = (fromIndex, toIndex) => {
@@ -256,13 +256,6 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
     return current
   }
 
-
-  const capitalize = (str) => {
-    if (!str) return ""
-    if (str[0] == " ") return ""
-    return str.charAt(0).toUpperCase() + str.slice(1)
- }
-
   const renderField = (field, index, path, isNested = false, provided = null) => {
     const fieldId = `${path}-${index}`
     const isExpanded = expandedFields.has(fieldId)
@@ -353,6 +346,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
                   <SelectItem value="status">Status</SelectItem>
                   <SelectItem value="attribute">Atributo</SelectItem>
                   <SelectItem value="dadovida">Dado de Vida</SelectItem>
+                  <SelectItem value="statuscusto">Custo de Status</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -391,58 +385,12 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
             )}
 
            {(fieldType === "string" || fieldType === "list") && (
-            <div className="col-span-2 space-y-2">
-               {fieldType === "string" ? <Label>Opções</Label> : <Label>Colunas da Lista</Label>}
-
-              <div className="flex flex-wrap gap-2">
-                {(Array.isArray(field.options) ? field.options : []).map((opt, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-1 rounded-md"
-                  >
-                    <span>{opt}</span>
-                    <button
-                      type="button"
-                      className="text-sm hover:text-destructive"
-                      onClick={() => {
-                        const newOptions = field.options.filter((_, i) => i !== index)
-                        updateField(`${currentPath}.options`, newOptions.length ? newOptions : null)
-                      }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Adicionar nova opção"
-                  value={newOption}
-                  onChange={(e) => setNewOption(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault()
-                      if (!newOption.trim()) return
-                      const updated = [...(field.options || []), newOption.trim()]
-                      updateField(`${currentPath}.options`, updated)
-                      setNewOption("")
-                    }
-                  }}
+                <OptionsEditor
+                  fieldType={fieldType}
+                  field={field}
+                  currentPath={currentPath}
+                  updateField={updateField}
                 />
-                <Button
-                  type="button"
-                  onClick={() => {
-                    if (!newOption.trim()) return
-                    const updated = [...(field.options || []), newOption.trim()]
-                    updateField(`${currentPath}.options`, updated)
-                    setNewOption("")
-                  }}
-                >
-                  Adicionar
-                </Button>
-              </div>
-            </div>
           )}
 
           {(fieldType === "object" || fieldType === "objectlist") && (
@@ -468,8 +416,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
               <Label>Colunas</Label>
               <Input
                 placeholder="Ex: 2, 3"
-                value={field.cols}
-                defaultValue={1}
+                value={field.cols || 1}
                 min={1}
                 max={6}
                 onChange={(e) => updateField(`${currentPath}.cols`, e.target.value)}
@@ -525,7 +472,11 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
               <Label>Cor (Em Inglês)</Label>
               <Select
                 value={field.cor}
-                onValueChange={(value) => updateField(`${currentPath}.cor`, value)}
+                onValueChange={
+                  (value) => {
+                    updateField(`${currentPath}.cor`, value)
+                  }
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a cor" />

@@ -10,8 +10,8 @@ interface ListWithDragProps {
   path: string
   value: any
   field: any
-  colSpan?: number
-  rowSpan?: number
+  colSpan?: string | number
+  rowSpan?: string | number
   showLabel?: boolean
   displayName?: string
   updateValue: (path: string, value: any) => void

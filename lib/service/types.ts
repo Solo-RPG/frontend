@@ -42,6 +42,7 @@ export interface TemplateBasicInfo {
   system_name: string
   version: string
   cols?: string
+  status?: []
   description?: string
   created_at?: string
 }

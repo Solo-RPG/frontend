@@ -6,13 +6,13 @@ import { capitalize } from "@/lib/utils"
 interface ObjectWithFieldsProps {
   path: string
   field: any
-  colSpan?: number
-  rowSpan?: number
+  colSpan?: number | string
+  rowSpan?: number | string
   showLabel?: boolean
   displayName?: string
   renderField: (key: string, subField: any, parentPath: string) => React.ReactNode
-  flex?: number
-  cols?: number
+  flex?: number | string
+  cols?: number | string
 }
 
 export function ObjectField({

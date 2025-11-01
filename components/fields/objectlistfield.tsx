@@ -19,6 +19,8 @@ import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { X, Plus, GripVertical } from "lucide-react"
 import { capitalize } from "@/lib/utils"
+import { sub } from "date-fns"
+import StatusCustoField from "./statuscustofield"
 
 export function ObjectListField({
   path,
@@ -29,15 +31,19 @@ export function ObjectListField({
   showLabel = true,
   displayName = "",
   updateValue,
+  getValue,
+  getAllStatus
 }: {
   path: string
   value: any
   field: any
-  colSpan?: number
-  rowSpan?: number
+  colSpan?: number | string
+  rowSpan?: number | string
   showLabel?: boolean
   displayName?: string
   updateValue: (path: string, value: any) => void
+  getValue?: (path: string) => unknown
+  getAllStatus?: () => string[]
 }) {
   const listValue = Array.isArray(value) ? value : []
 
@@ -83,6 +89,8 @@ export function ObjectListField({
                 normalizedList={normalizedList}
                 path={path}
                 updateValue={updateValue}
+                getValue={getValue}
+                getAllStatus={getAllStatus}
               />
             ))}
           </div>
@@ -108,7 +116,7 @@ export function ObjectListField({
   )
 }
 
-function SortableCard({ id, item, index, field, path, normalizedList, updateValue }: any) {
+function SortableCard({ id, item, index, field, path, normalizedList, updateValue, getValue, getAllStatus }: any) {
   const { attributes, listeners, setNodeRef, transform, transition, isSorting } = useSortable({ id, transition: {
     duration: 150,
     easing: 'ease-out',
@@ -148,6 +156,7 @@ function SortableCard({ id, item, index, field, path, normalizedList, updateValu
         {field.fields.map((subField: any) => (
           <div key={subField.name} className={`col-span-${subField.span}`}>
             <Label className="text-xs mb-1">{capitalize(subField.name)}</Label>
+            
             {subField.type === "string" ? (
               <Input
                 value={item[subField.name]}
@@ -158,7 +167,7 @@ function SortableCard({ id, item, index, field, path, normalizedList, updateValu
                   updateValue(path, newList)
                 }}
               />
-            ) : (
+            ) : subField.type === "textarea" ? (
               <Textarea
                 value={item[subField.name]}
                 onChange={(e) => {
@@ -168,11 +177,23 @@ function SortableCard({ id, item, index, field, path, normalizedList, updateValu
                   updateValue(path, newList)
                 }}
               />
-            )}
+            )
+          
+             : subField.type === "statuscusto" ? (
+              <StatusCustoField
+                path={`${path}.${subField.name}`}
+                field={subField}
+                getValue={getValue}
+                updateValue={updateValue}
+                displayName={subField.name}
+                showLabel={false}
+                getAllStatus={getAllStatus}
+              />
+            ) : null
+            }
           </div>
         ))}
       </div>
     </Card>
   )
 }
-
