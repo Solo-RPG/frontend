@@ -41,7 +41,6 @@ export default function CharacterDetailPage() {
 
         if (characterData.ficha_id) {
           const sheetResponse = await SheetService.getSheet(characterData.ficha_id)
-          console.log(sheetResponse.data.id)
           setSheet(sheetResponse.data)
           const flattenedData = flattenSheetData(sheetResponse.data.data);
           setEditableSheetData(flattenedData);
@@ -107,14 +106,6 @@ export default function CharacterDetailPage() {
       console.log("Editable Character:", editableCharacter);
     }
   }, [editableCharacter]);
-
-  useEffect(() => {
-    if (sheet) {
-      console.log("Dados originais da ficha:", sheet.data);
-      const flattened = flattenSheetData(sheet.data);
-      console.log("Dados aplainados:", flattened);
-    }
-  }, [sheet]);
 
   useEffect(() => {
     if (editableSheetData && Object.keys(editableSheetData).length > 0) {

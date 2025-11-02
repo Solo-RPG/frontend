@@ -19,7 +19,6 @@ import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { X, Plus, GripVertical } from "lucide-react"
 import { capitalize } from "@/lib/utils"
-import { sub } from "date-fns"
 import StatusCustoField from "./statuscustofield"
 
 export function ObjectListField({
@@ -181,7 +180,9 @@ function SortableCard({ id, item, index, field, path, normalizedList, updateValu
           
              : subField.type === "statuscusto" ? (
               <StatusCustoField
-                path={`${path}.${subField.name}`}
+                path={path}
+                index={index}
+                normalizedList={normalizedList}
                 field={subField}
                 getValue={getValue}
                 updateValue={updateValue}

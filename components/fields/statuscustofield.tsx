@@ -1,17 +1,16 @@
 "use client"
 
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { FieldDefinition } from "../forms/dynamic-form-renderer"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { ta } from "date-fns/locale";
 import { useEffect, useState } from "react";
-import { set } from "date-fns";
 import { Button } from "../ui/button";
 import { get } from "http";
 
 export default function StatusCustoField({
   path,
+  normalizedList,
+  index,
   field,
   getValue,
   updateValue,
@@ -22,6 +21,8 @@ export default function StatusCustoField({
   getAllStatus
 }: {
   path: string;
+  normalizedList: any[];
+  index: number;
   field: FieldDefinition;
   getValue: (path: string) => unknown;
   updateValue: (path: string, value: unknown) => void;
@@ -31,33 +32,44 @@ export default function StatusCustoField({
   rowSpan?: string;
   getAllStatus?: () => string[];
 }) {
-  const [targetPath, setTargetPath] = useState(field.status_target)
+    const getCurrentValue = () => {
+    const pathFound = getValue(`${path}`)
+    return pathFound[index].custo
+  }
+
+  const [targetPath, setTargetPath] = useState(getCurrentValue)
   const currentTargetValue = getValue(`${targetPath}.value`) as number
-  const [inputValue, setInputValue] = useState("0")
-  const [allStatusValues, setAllStatusValues] = useState<string[]>(getAllStatus())
+  const [inputValue, setInputValue] = useState("")
+  const [allStatusValues, setAllStatusValues] = useState<string[]>(getAllStatus || [])
 
   useEffect(() => {
-    setAllStatusValues(getAllStatus() || [])
+    setAllStatusValues(getAllStatus || [])
   }, [getAllStatus]);
 
   const handleChange = () => {
-    const inputIntValue = Number(inputValue)
-
-    if (!targetPath) return
     let newTargetValue = currentTargetValue
 
-    newTargetValue = currentTargetValue - inputIntValue
+    if(inputValue[0] == "+") {
+      newTargetValue += Number(inputValue.slice(1))
+    } else if (inputValue[0] == "-") {
+      newTargetValue -= Number(inputValue.slice(1))
+    } else {
+      newTargetValue = currentTargetValue - Number(inputValue)
+    }
 
     updateValue(`${targetPath}.value`, newTargetValue)
   };
 
   return (
-    <div key={path} className={` grid gap-2 grid-cols-3`}>
+    <div key={path} className={`grid gap-2 grid-cols-3`}>
       <Select
-        value={targetPath}
+        value={getCurrentValue()}
         onValueChange={(value) => {
           setTargetPath(value)
-          updateValue(`${path}.status_target`, value)
+          const newList = normalizedList.map((it, i) =>
+            i === index ? { ...it, [field.name]: value } : it
+          )
+          updateValue(path, newList)
         }}
       >
         <SelectTrigger className="w-full">
@@ -77,7 +89,7 @@ export default function StatusCustoField({
         type="string"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
-        placeholder={`Digite o valor para subtrair em ${targetPath || "status"}`}
+        placeholder={`Ex: +6, -5, 3`}
         required={field.required}
       />
       <Button
