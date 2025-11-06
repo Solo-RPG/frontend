@@ -127,6 +127,7 @@ class AuthService {
   getUserInfo(): UserInfo | null {
     if (typeof window === 'undefined') return null; // ← Adicione esta verificação
     const userInfo = localStorage.getItem(this.USER_INFO_KEY);
+    console.log("User Info:", userInfo);
     return userInfo ? JSON.parse(userInfo) : null;
   }
 

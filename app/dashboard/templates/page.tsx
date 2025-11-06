@@ -16,11 +16,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { uploadTemplate, deleteTemplate, getTemplatesById } from "@/lib/service/templates-service"
+import { uploadTemplate, deleteTemplate, getTemplatesById, getTemplates } from "@/lib/service/templates-service"
 import {Template} from "@/lib/service/types"
 import Link from "next/link"
 import { TemplateEditModal } from "@/components/forms/template-edit-form"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { authService } from "@/lib/service/auth-service"
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([])
@@ -35,7 +36,7 @@ export default function TemplatesPage() {
   const fetchTemplates = async () => {
     try {
       setIsLoading(true)
-      const fetchedTemplates = await getTemplatesById()
+      const fetchedTemplates = await getTemplates()
       setTemplates(fetchedTemplates)
     } catch (error) {
       toast({
@@ -178,12 +179,12 @@ export default function TemplatesPage() {
       </div>
 
       <div className="flex flex-wrap gap-2 justify-end">
-        {!isMobile &&  <Button href="/dashboard/templates/create" asChild className="w-full sm:w-auto">
+        <Button href="/dashboard/templates/create" asChild className="w-full sm:w-auto">
           <a className="flex items-center justify-center">
             <Plus className="mr-2 h-4 w-4" />
             Novo Template
           </a>
-        </Button>}
+        </Button>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -287,11 +288,13 @@ export default function TemplatesPage() {
                   </Button>
                 </Link>
 
-                {!isMobile && <Link href={`/dashboard/templates/${template.id}`} passHref>
-                  <Button size="sm" variant="outline" className="flex-1 min-w-[100px] w-full">
-                    Editar
-                  </Button>
-                </Link>}
+                {template.owner_id === authService.getUserInfo().id && (
+                  <Link href={`/dashboard/templates/${template.id}`} passHref>
+                    <Button size="sm" variant="outline" className="flex-1 min-w-[100px] w-full">
+                      Editar
+                    </Button>
+                  </Link>
+                )}
 
                 {!isMobile && <TemplateEditModal template={template} onSuccess={fetchTemplates}>
                   <Button size="sm" variant="outline" className="flex-1 min-w-[100px]">

@@ -45,7 +45,7 @@ export function ObjectField({
       </CardHeader>
 
       <CardContent className="space-y-4 w-full">
-        <div className={`grid md:gap-4 ${className} overflow-auto`}>
+        <div className={`grid gap-2 md:gap-4 ${className} overflow-auto`}>
           {Object.entries(field.fields).map(([subKey, subField]) =>
             renderField(subKey, subField, path)
           )}

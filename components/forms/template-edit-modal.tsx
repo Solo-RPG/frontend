@@ -263,7 +263,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
     const fieldType = getFieldValue(`${currentPath}.type`)
 
     return (
-      <div key={field.id} className={`border dark:border-gray-700 rounded-lg p-4 shadow-sm ${isNested ? 'ml-6 mt-2' : ''}`}>
+      <div key={field.id} className={`border dark:border-gray-700 rounded-lg p-4 shadow-sm ${isNested ? 'lg:ml-6 mt-2' : ''}`}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
      
