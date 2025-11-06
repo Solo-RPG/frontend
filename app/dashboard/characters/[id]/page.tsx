@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { redirect, useParams, useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import CharacterService from "@/lib/service/characters-service"
@@ -46,6 +46,12 @@ export default function CharacterDetailPage() {
           setEditableSheetData(flattenedData);
           
           const templateResponse = await getTemplateById(sheetResponse.data.template_id);
+
+          console.log("Template Response:", templateResponse);
+
+          if(templateResponse.fields == null || (Array.isArray(templateResponse.fields) && templateResponse.fields.length === 0)) {
+            redirect("/dashboard/characters/" + id + "/create-sheet")
+          }
           
           // Converter array de campos para objeto com verificação segura
           const fieldsArray = templateResponse.fields;

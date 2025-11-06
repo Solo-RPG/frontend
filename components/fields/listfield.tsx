@@ -66,7 +66,7 @@ export function ListField({
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className="space-y-3 max-h-[300px] lg:max-h-[400px] overflow-y-auto "
+              className="space-y-3 overflow-y-auto"
             >
               {normalizedList.map((item, index) => (
                 <Draggable

@@ -35,7 +35,7 @@ export default function SheetCard({
 }) {
   const isTemplateReady = template && Object.keys(template.fields || {}).length > 0
 
-  const rootTabs = Object.keys(template?.fields)   // Pega campos raiz
+  const rootTabs = Object.keys(template?.fields || {})
   const [activeTab, setActiveTab] = useState(rootTabs[0])
 
   if (sheet && isTemplateReady) {

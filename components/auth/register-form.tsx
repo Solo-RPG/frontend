@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { redirect, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -39,7 +39,6 @@ export function RegisterForm() {
 
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Faça login para continuar.",
       })
 
       router.push("/dashboard")
