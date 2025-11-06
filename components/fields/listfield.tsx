@@ -51,89 +51,132 @@ export function ListField({
   }
 
   return (
-    <div className={`space-y-2 col-span-${colSpan} row-span-${rowSpan}`}>
-      {showLabel && <div className="font-semibold">{capitalize(displayName)}</div>}
+  <div
+    className={`space-y-2 col-span-${colSpan} row-span-${rowSpan} w-full`}
+  >
+    {showLabel && (
+      <div className="font-semibold text-sm sm:text-base break-words">
+        {capitalize(displayName)}
+      </div>
+    )}
 
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId={`${path}-droppable`}>
-          {(provided) => (
-            <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
-              {normalizedList.map((item, index) => (
-                <Draggable key={`${path}-${index}`} draggableId={`${path}-${index}`} index={index}>
-                  {(provided) => (
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <Droppable droppableId={`${path}-droppable`}>
+        {(provided) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className="space-y-3"
+          >
+            {normalizedList.map((item, index) => (
+              <Draggable
+                key={`${path}-${index}`}
+                draggableId={`${path}-${index}`}
+                index={index}
+              >
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 p-3 border rounded-lg bg-background/40 transition-all"
+                  >
+                    {/* Ícone de drag */}
                     <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className="flex overflow-x-auto gap-3 items-end p-2 border rounded-lg bg-background/40"
+                      {...provided.dragHandleProps}
+                      className="flex justify-center sm:justify-start"
                     >
-                      <div {...provided.dragHandleProps}>
-                        <GripVertical className="h-4 w-4 mb-3 text-gray-400 cursor-grab" />
-                      </div>
+                      <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
+                    </div>
 
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="w-full">
-                            {field.options.map((opt: string) => item[opt])[0] || `Item ${index + 1}`}
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-lg">
+                    {/* Botão de edição */}
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 min-w-0 truncate"
+                        >
+                          {field.options.map((opt: string) => item[opt])[0] ||
+                            `Item ${index + 1}`}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-lg w-[90vw] sm:w-[500px]">
+                        <DialogTitle className="text-lg font-semibold mb-2">
+                          Editar Item
+                        </DialogTitle>
+                        <div className="space-y-3">
                           {field.options.map((opt: string) => (
                             <div key={opt} className="flex flex-col">
-                              <DialogTitle>
-                                <div className="text-xs mb-1">{opt}</div>
-                              </DialogTitle>
+                              <label className="text-xs mb-1 text-muted-foreground">
+                                {opt}
+                              </label>
                               <Input
                                 value={item[opt]}
-                                className="mt-2"
                                 onChange={(e) => {
                                   const newList = normalizedList.map((it, i) =>
-                                    i === index ? { ...it, [opt]: e.target.value } : it
-                                  )
-                                  updateValue(path, newList)
+                                    i === index
+                                      ? { ...it, [opt]: e.target.value }
+                                      : it
+                                  );
+                                  updateValue(path, newList);
                                 }}
                               />
                             </div>
                           ))}
-                        </DialogContent>
-                      </Dialog>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
 
+                    {/* Botão de remover */}
+                    <div className="flex justify-center sm:justify-end">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="w-12 h-10"
+                        className="w-full sm:w-12 h-10"
                         onClick={() => {
-                          const newList = normalizedList.filter((_, i) => i !== index)
-                          updateValue(path, newList)
+                          const newList = normalizedList.filter(
+                            (_, i) => i !== index
+                          );
+                          updateValue(path, newList);
                         }}
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
+                  </div>
+                )}
+              </Draggable>
+            ))}
 
+            {provided.placeholder}
+
+            {/* Botão de adicionar novo item */}
+            <div className="pt-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
+                className="w-full sm:w-auto"
                 onClick={() => {
-                  const emptyItem = field.options.reduce((acc: any, opt: string) => {
-                    acc[opt] = ""
-                    return acc
-                  }, {})
-                  updateValue(path, [...normalizedList, emptyItem])
+                  const emptyItem = field.options.reduce(
+                    (acc: any, opt: string) => {
+                      acc[opt] = "";
+                      return acc;
+                    },
+                    {}
+                  );
+                  updateValue(path, [...normalizedList, emptyItem]);
                 }}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar
               </Button>
             </div>
-          )}
-        </Droppable>
-      </DragDropContext>
-    </div>
-  )
+          </div>
+        )}
+      </Droppable>
+    </DragDropContext>
+  </div>
+)
 }
