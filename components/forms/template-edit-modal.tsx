@@ -55,26 +55,34 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
   }, [templateJson])
 
   const updateField = (path, value) => {
-    setFormData(prev => {
-      const newData = JSON.parse(JSON.stringify(prev))
-      const keys = path.split('.')
-      let current = newData
+  setFormData(prev => {
+    const newData = JSON.parse(JSON.stringify(prev))
+    const keys = path.split('.')
+    let current = newData
 
-      // Navega até o campo alvo
-      for (let i = 0; i < keys.length - 1; i++) {
-        const key = keys[i]
-        if (key.includes('[')) {
-          const arrayKey = key.substring(0, key.indexOf('['))
-          const index = parseInt(key.match(/\[(\d+)\]/)[1])
-          current = current[arrayKey][index]
-        } else {
-          current = current[key]
-        }
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i]
+      if (key.includes('[')) {
+        const arrayKey = key.substring(0, key.indexOf('['))
+        const index = parseInt(key.match(/\[(\d+)\]/)[1])
+        current = current[arrayKey][index]
+      } else {
+        current = current[key]
       }
+    }
 
-      return newData
-    })
-  }
+    const lastKey = keys[keys.length - 1]
+    if (lastKey.includes('[')) {
+      const arrayKey = lastKey.substring(0, lastKey.indexOf('['))
+      const index = parseInt(lastKey.match(/\[(\d+)\]/)[1])
+      current[arrayKey][index] = value
+    } else {
+      current[lastKey] = value
+    }
+
+    return newData
+  })
+}
 
   const addNewField = () => {
     setFormData(prev => ({
@@ -585,6 +593,7 @@ function TemplateEditorModal({ templateJson }: TemplateEditorModalProps) {
             <Button
               type="button"
               variant="outline"
+              onClick={() => history.back()}
             >
               Cancelar
             </Button>
