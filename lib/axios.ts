@@ -1,7 +1,7 @@
 import axios, { AxiosHeaders } from 'axios';
 import { authService } from './service/auth-service';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const BASE_URL = 'http://54.232.64.32';
 
 const api_templates = axios.create({
   baseURL: "http://localhost:8000",
