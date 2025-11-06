@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Users, FileText} from "lucide-react"
+import { Users, FileText } from "lucide-react"
 import { useLocalStorage } from "@/hooks/use-auth"
 import { authService } from "@/lib/service/auth-service"
 import CharacterService from "@/lib/service/characters-service"
@@ -33,7 +33,7 @@ export default function DashboardPage() {
     if (!user) {
       const info = authService.getUserInfo()
       if (!info) {
-        router.push('/login')
+        router.push("/login")
         return
       }
       setUserInfo(info)
@@ -46,23 +46,20 @@ export default function DashboardPage() {
     const loadData = async () => {
       try {
         setIsLoading(true)
-        
         if (user?.id) {
           const [characters, templates] = await Promise.all([
             CharacterService.getCharactersByOwner(user.id),
-            getTemplates()
+            getTemplates(),
           ])
 
           setStats({
             characters: characters.length,
             templates: templates.length || 0,
-            campaigns: 0
+            campaigns: 0,
           })
 
-          // Get last 3 characters ordered by creation date
-          setRecentCharacters(
-            characters.slice(0, 3) // Mostrar apenas os 3 mais recentes
-          )
+          // Mostrar os 3 mais recentes
+          setRecentCharacters(characters.slice(0, 3))
         }
       } catch (error) {
         console.error("Failed to load dashboard data:", error)
@@ -76,19 +73,20 @@ export default function DashboardPage() {
       }
     }
 
-    if (user) {
-      loadData()
-    }
+    if (user) loadData()
   }, [user, toast])
 
+  // Skeleton enquanto carrega
   if (isUserLoading || isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 p-4 sm:p-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+            Dashboard
+          </h1>
         </div>
-        
-        <div className="grid gap-6 md:grid-cols-3">
+
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(3)].map((_, i) => (
             <Card key={i} className="animate-pulse border-0 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -103,7 +101,7 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-1 lg:grid-cols-2">
           {[...Array(2)].map((_, i) => (
             <Card key={i} className="animate-pulse border-0 shadow-sm">
               <CardHeader>
@@ -129,38 +127,44 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-center justify-between">
+    <div className="space-y-6 p-4 sm:p-6">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Dashboard</h1>
-          <p className="text-gray-400">Bem-vindo de volta! Gerencie suas fichas de RPG.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+            Dashboard
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">
+            Bem-vindo de volta! Gerencie suas fichas de RPG.
+          </p>
         </div>
       </header>
 
-      <section className="grid gap-6 md:grid-cols-3">
-        <StatCard 
-          title="Personagens" 
-          value={stats.characters} 
-          description="personagens criados" 
-          icon={<Users className="h-4 w-4 text-purple-600" />}
+      {/* Estatísticas principais */}
+      <section className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard
+          title="Personagens"
+          value={stats.characters}
+          description="personagens criados"
+          icon={<Users className="h-5 w-5 text-purple-600" />}
         />
-        <StatCard 
-          title="Templates" 
-          value={stats.templates} 
-          description="sistemas disponíveis" 
-          icon={<FileText className="h-4 w-4 text-blue-600" />}
+        <StatCard
+          title="Templates"
+          value={stats.templates}
+          description="sistemas disponíveis"
+          icon={<FileText className="h-5 w-5 text-blue-600" />}
         />
       </section>
 
-      <section className="grid gap-6 md:grid-cols-2">
+      {/* Personagens recentes e ações rápidas */}
+      <section className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
         <RecentCharactersCard characters={recentCharacters} />
         <QuickActionsCard />
       </section>
 
-      <RecentActivityCard stats={stats} />
+      {/* Atividades recentes */}
+      <section>
+        <RecentActivityCard stats={stats} />
+      </section>
     </div>
   )
 }
-
-
-

@@ -1,6 +1,6 @@
 // lib/service/auth-service.ts
 import {api} from '../axios';
-import { ApiResponse } from './types';
+import { ApiResponse } from './types'
 
 interface AuthTokens {
   token: string;
@@ -41,9 +41,10 @@ class AuthService {
         name, email, password
       });
       
-      // Se a resposta contiver tokens (como no login), guarda eles
-      if (response.data.tokens) {
-        this.setAuthTokens(response.data.tokens);
+      const login = await api.characters.post('/api/auth/login', { email, password });
+
+      if (login.data.tokens) {
+        this.setAuthTokens(login.data.tokens);
         await this.fetchAndSaveUserInfo();
       }
       

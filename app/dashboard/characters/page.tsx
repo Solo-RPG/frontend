@@ -145,7 +145,7 @@ export default function CharactersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:px-6 md:px-8 pb-8">
       <CharactersHeader />
       <SearchInput searchTerm={searchTerm} onChange={setSearchTerm} />
 

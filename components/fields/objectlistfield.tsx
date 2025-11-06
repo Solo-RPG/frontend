@@ -77,7 +77,7 @@ export function ObjectListField({
           items={normalizedList.map((_, i) => i.toString())}
           strategy={rectSortingStrategy} // ← permite mover horizontal e vertical ao mesmo tempo
         >
-          <div className={`grid grid-cols-${field.cols} gap-4`}>
+          <div className={`grid gap-4 grid-cols-1 sm:grid-cols-${field.cols}`}>
             {normalizedList.map((item, index) => (
               <SortableCard
                 key={index.toString()}
