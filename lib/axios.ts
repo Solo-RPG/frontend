@@ -1,24 +1,24 @@
 import axios, { AxiosHeaders } from 'axios';
 import { authService } from './service/auth-service';
 
-const BASE_URL = 'http://54.232.64.32';
+const BASE_URL = 'https://backend-xshg.onrender.com';
 
 const api_templates = axios.create({
-  baseURL: "http://54.232.64.32",
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 const api_sheets = axios.create({
-  baseURL: "http://54.232.64.32",
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 const api_characters = axios.create({
-  baseURL: "http://54.232.64.32",
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
