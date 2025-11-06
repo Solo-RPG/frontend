@@ -1,7 +1,7 @@
 import axios, { AxiosHeaders } from 'axios';
 import { authService } from './service/auth-service';
 
-const BASE_URL = 'https://backend-xshg.onrender.com';
+const BASE_URL = process.env.NEXT_PUBLIC_API_LINK;
 
 const api_templates = axios.create({
   baseURL: BASE_URL,
