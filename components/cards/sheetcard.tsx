@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Loader2, Save, Trash2, Plus } from "lucide-react"
 import { DynamicFormRenderer } from "@/components/forms/dynamic-form-renderer"
 import { SheetForm, Template } from "@/lib/service/types"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import SheetTabs from "../mobile/sheettabs"
+import { set } from "date-fns"
 
 export default function SheetCard({
   sheet,
@@ -33,6 +34,11 @@ export default function SheetCard({
   onDelete: () => void
   onCreateSheet: () => void
 }) {
+
+  useEffect(() => {
+    onSave()
+  }, [editableSheetData])
+
   const isTemplateReady = template && Object.keys(template.fields || {}).length > 0
 
   const rootTabs = Object.keys(template?.fields || {})
@@ -53,19 +59,6 @@ export default function SheetCard({
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <Button
-                onClick={onSave}
-                disabled={isSavingSheet}
-                className="flex items-center justify-center"
-              >
-                {isSavingSheet ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                <span className="ml-2 text-sm sm:text-base">Salvar Ficha</span>
-              </Button>
-
               <Button
                 variant="destructive"
                 onClick={onDelete}

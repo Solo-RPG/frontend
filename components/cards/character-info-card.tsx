@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Loader2, Save, Trash2 } from "lucide-react"
 import { Character } from "@/lib/service/types"
 import CharacterAvatar from "./characteravatar"
+import { useEffect } from "react"
 
 export default function CharacterInfoCard({
   character,
@@ -24,6 +25,11 @@ export default function CharacterInfoCard({
   onSave: () => void
   onDelete: () => void
 }) {
+
+  useEffect(() => {
+    onSave()
+  }, [editableCharacter])
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -34,19 +40,6 @@ export default function CharacterInfoCard({
           </CardTitle>
 
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <Button
-              onClick={onSave}
-              disabled={isSavingCharacter}
-              className="flex items-center justify-center"
-            >
-              {isSavingCharacter ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              <span className="ml-2 text-sm sm:text-base">Salvar</span>
-            </Button>
-
             <Button
               variant="destructive"
               onClick={onDelete}

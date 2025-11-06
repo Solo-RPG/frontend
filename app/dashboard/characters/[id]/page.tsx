@@ -135,10 +135,6 @@ export default function CharacterDetailPage() {
         }
       )
       setCharacter(updatedCharacter)
-      toast({
-        title: "Sucesso",
-        description: "Personagem atualizado com sucesso",
-      })
     } catch (error) {
       toast({
         title: "Erro",
@@ -174,10 +170,6 @@ export default function CharacterDetailPage() {
       const response = await SheetService.updateSheet(character.ficha_id, dataToSend);
       
       setSheet(response.data);
-      toast({
-        title: "Sucesso",
-        description: "Ficha atualizada com sucesso",
-      });
     } catch (error: any) {
       console.error("Erro detalhado:", error);
       toast({
