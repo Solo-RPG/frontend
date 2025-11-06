@@ -38,11 +38,13 @@ export interface LoginResponse {
 export type Template = Record<string, any>;
 
 export interface TemplateBasicInfo {
-  id: string;
-  system_name: string;
-  version: string;
-  description?: string;
-  created_at?: string;
+  id: string
+  system_name: string
+  version: string
+  cols?: string
+  status?: []
+  description?: string
+  created_at?: string
 }
 
 export interface FieldConfig {
@@ -54,6 +56,11 @@ export interface FieldConfig {
   options?: string[]
   min?: number
   max?: number
+  flex?: string
+  span?: string
+  cols?: string
+  color?: string
+  showLabel?: boolean
   fields?: Record<string, FieldConfig> | FieldConfig[]
 }
 
@@ -61,22 +68,22 @@ export interface FieldConfig {
 
 export interface Character {
   id: string;
-  ownerId: string;
-  nomePersonagem: string;
-  fichaId?: string;
+  owner_id: string;
+  nome_personagem: string;
+  ficha_id?: string;
   historia?: string;
   imagem?: string;
 }
 
 export interface CharacterCreateRequest {
-  nomePersonagem: string;
+  nome_personagem: string;
   historia?: string;
   imagem?: string;
 }
 
 export interface CharacterUpdateRequest {
   [key: string]: any; // Mapeamento dinâmico para atualizações parciais
-  nomePersonagem?: string;
+  nome_personagem?: string;
   fichaId?: string | null;
   historia?: string;
   imagem?: string;

@@ -1,10 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Plus, Users, FileText, Dice6, TrendingUp, Loader2 } from "lucide-react"
-import Link from "next/link"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Users, FileText} from "lucide-react"
 import { useLocalStorage } from "@/hooks/use-auth"
 import { authService } from "@/lib/service/auth-service"
 import CharacterService from "@/lib/service/characters-service"
@@ -12,6 +10,10 @@ import { getTemplates } from "@/lib/service/templates-service"
 import { Character, UserInfo } from "@/lib/service/types"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+import { QuickActionsCard } from "@/components/cards/quickactionscard"
+import { RecentActivityCard } from "@/components/cards/recentactivitycard"
+import { RecentCharactersCard } from "@/components/cards/recentcharacterscard"
+import { StatCard } from "@/components/cards/statcard"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -83,7 +85,7 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Dashboard</h1>
         </div>
         
         <div className="grid gap-6 md:grid-cols-3">
@@ -130,8 +132,8 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Bem-vindo de volta! Gerencie suas fichas de RPG.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Dashboard</h1>
+          <p className="text-gray-400">Bem-vindo de volta! Gerencie suas fichas de RPG.</p>
         </div>
       </header>
 
@@ -160,194 +162,5 @@ export default function DashboardPage() {
   )
 }
 
-// Componente para cartão de estatísticas
-function StatCard({ title, value, description, icon }: {
-  title: string
-  value: number
-  description: string
-  icon: React.ReactNode
-}) {
-  return (
-    <Card className="border-0 shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-gray-900">{value}</div>
-        <p className="text-xs text-gray-500">{description}</p>
-      </CardContent>
-    </Card>
-  )
-}
 
-// Componente para personagens recentes
-function RecentCharactersCard({ characters }: { characters: Character[] }) {
-  return (
-    <Card className="border-0 shadow-sm">
-      <CardHeader>
-        <CardTitle className="text-gray-900">Personagens Recentes</CardTitle>
-        <CardDescription className="text-gray-600">Seus personagens criados recentemente</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {characters.length > 0 ? (
-            characters.map((character) => (
-              <Link 
-                key={character.id} 
-                href={`/dashboard/characters/${character.id}`}
-                className="block hover:bg-gray-50 rounded-lg p-2 transition-colors"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Users className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{character.nomePersonagem}</p>
-                    <p className="text-sm text-gray-500">
-                      {character.fichaId ? "Ficha criada" : "Sem ficha vinculada"}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <EmptyState 
-              message="Nenhum personagem criado ainda"
-              actionText="Criar Primeiro Personagem"
-              actionHref="/dashboard/characters/create"
-            />
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
-// Componente para ações rápidas
-function QuickActionsCard() {
-  return (
-    <Card className="border-0 shadow-sm">
-      <CardHeader>
-        <CardTitle className="text-gray-900">Ações Rápidas</CardTitle>
-        <CardDescription className="text-gray-600">
-          Acesse rapidamente as funcionalidades principais
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <QuickActionButton 
-          href="/dashboard/characters/create"
-          icon={<Plus className="mr-2 h-4 w-4" />}
-          text="Criar Nova Ficha"
-          variant="default"
-        />
-        <QuickActionButton 
-          href="/dashboard/characters"
-          icon={<Users className="mr-2 h-4 w-4" />}
-          text="Ver Todos os Personagens"
-          variant="outline"
-        />
-        <QuickActionButton 
-          href="/dashboard/templates"
-          icon={<FileText className="mr-2 h-4 w-4" />}
-          text="Gerenciar Templates"
-          variant="outline"
-        />
-      </CardContent>
-    </Card>
-  )
-}
-
-// Componente para atividade recente
-function RecentActivityCard({ stats }: { stats: { characters: number, templates: number } }) {
-  return (
-    <Card className="border-0 shadow-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-gray-900">
-          <TrendingUp className="h-5 w-5" />
-          Atividade Recente
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <ActivityItem 
-            color="green" 
-            text="Sistema inicializado com sucesso" 
-            time="agora" 
-          />
-          <ActivityItem 
-            color="blue" 
-            text={`${stats.templates} templates carregados`} 
-            time="1 min atrás" 
-          />
-          <ActivityItem 
-            color="purple" 
-            text={`${stats.characters} personagens carregados`} 
-            time="2 min atrás" 
-          />
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-// Componentes auxiliares
-function EmptyState({ message, actionText, actionHref }: {
-  message: string
-  actionText: string
-  actionHref: string
-}) {
-  return (
-    <div className="text-center py-4">
-      <p className="text-gray-500 text-sm">{message}</p>
-      <Button asChild size="sm" className="mt-2 bg-purple-600 hover:bg-purple-700">
-        <Link href={actionHref}>
-          <Plus className="mr-2 h-4 w-4" />
-          {actionText}
-        </Link>
-      </Button>
-    </div>
-  )
-}
-
-function QuickActionButton({ href, icon, text, variant = 'default' }: {
-  href: string
-  icon: React.ReactNode
-  text: string
-  variant?: 'default' | 'outline'
-}) {
-  return (
-    <Button
-      asChild
-      variant={variant}
-      className={`w-full justify-start ${variant === 'outline' ? 'border-gray-200 hover:bg-gray-50 bg-transparent' : ''}`}
-    >
-      <Link href={href}>
-        {icon}
-        {text}
-      </Link>
-    </Button>
-  )
-}
-
-function ActivityItem({ color, text, time }: {
-  color: 'green' | 'blue' | 'purple'
-  text: string
-  time: string
-}) {
-  const colorClasses = {
-    green: 'bg-green-500',
-    blue: 'bg-blue-500',
-    purple: 'bg-purple-500'
-  }
-
-  return (
-    <div className="flex items-center justify-between py-2">
-      <div className="flex items-center space-x-3">
-        <div className={`w-2 h-2 rounded-full ${colorClasses[color]}`} />
-        <span className="text-sm text-gray-700">{text}</span>
-      </div>
-      <span className="text-xs text-gray-500">{time}</span>
-    </div>
-  )
-}

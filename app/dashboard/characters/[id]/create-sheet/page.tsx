@@ -32,6 +32,7 @@ import {
   SheetFormData,
   UserInfo
 } from "@/lib/service/types";
+import { Input } from "@/components/ui/input";
 
 export default function CreateSheetPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -41,6 +42,7 @@ export default function CreateSheetPage() {
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [character, setCharacter] = useState<Character | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(authService.getUserInfo());
+  const [searchTerm, setSearchTerm] = useState("");
 
   const router = useRouter();
   const { toast } = useToast();
@@ -63,6 +65,10 @@ export default function CreateSheetPage() {
       setTemplatesLoading(false);
     }
   }, [toast]);
+
+  const filteredTemplates = templates.filter((template) =>
+    template.system_name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Carrega informações do personagem
   const loadCharacter = useCallback(async () => {
@@ -280,8 +286,18 @@ useEffect(() => {
       {!selectedTemplate ? (
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Passo 1: Selecione um Template</h2>
+
+          <div className="flex items-center">
+            <Input
+              placeholder="Buscar template por nome"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-md"
+            />
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {templates.map((template) => (
+            {filteredTemplates.map((template) => (
               <Card
                 key={template.id}
                 className="cursor-pointer hover:shadow-md transition-shadow"
@@ -302,6 +318,7 @@ useEffect(() => {
           </div>
         </div>
       ) : (
+
         <div className="space-y-6">
           {character && (
             <Card className="mb-6">

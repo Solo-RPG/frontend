@@ -58,7 +58,7 @@ export default function CreateCharacterPage() {
 
     try {
       const response = await CharacterService.createCharacter({
-        nomePersonagem: characterData.name,
+        nome_personagem: characterData.name,
         historia: characterData.history,
         imagem: characterData.photo,
       })

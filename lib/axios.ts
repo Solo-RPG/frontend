@@ -1,6 +1,8 @@
 import axios, { AxiosHeaders } from 'axios';
 import { authService } from './service/auth-service';
 
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 const api_templates = axios.create({
   baseURL: "http://localhost:8000",
   headers: {
@@ -9,14 +11,14 @@ const api_templates = axios.create({
 });
 
 const api_sheets = axios.create({
-  baseURL: "http://localhost:8001",
+  baseURL: "http://localhost:8000",
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 const api_characters = axios.create({
-  baseURL: "http://localhost:8002",
+  baseURL: "http://localhost:8000",
   headers: {
     'Content-Type': 'application/json',
   },

@@ -1,4 +1,5 @@
 import {api} from '../axios';
+import {authService} from './auth-service'
 import { 
   SheetForm, 
   SheetCreateRequest, 
@@ -22,7 +23,12 @@ class SheetService {
    */
   async createSheet(request: SheetCreateRequest): Promise<ApiResponse<SheetForm>> {
     try {
-      const response = await api.sheets.post<SheetForm>('/api/sheets', request);
+      const tokens = authService.getAuthTokens();
+      const response = await api.sheets.post<SheetForm>('/api/sheets/', request, {
+        headers: {
+          Authorization: `Bearer ${tokens?.token}`
+        }
+      });
       return {
         data: response.data,
         status: response.status
@@ -40,7 +46,11 @@ class SheetService {
    */
   async getSheet(sheetId: string, signal?: AbortSignal): Promise<ApiResponse<SheetForm>> {
     try {
+      const tokens = authService.getAuthTokens();
       const response = await api.sheets.get<SheetForm>(`/api/sheets/${sheetId}`, {
+        headers: {
+          Authorization: `Bearer ${tokens?.token}`
+        },
         signal, // Passa o AbortSignal para permitir cancelamento
         timeout: 10000 // 10 segundos de timeout
       });
@@ -64,7 +74,12 @@ class SheetService {
    */
   async getAllSheets(): Promise<ApiResponse<SheetForm[]>> {
     try {
-      const response = await api.sheets.get<SheetForm[]>('/api/sheets');
+      const tokens = authService.getAuthTokens();
+      const response = await api.sheets.get<SheetForm[]>('/api/sheets', {
+        headers: {
+          Authorization: `Bearer ${tokens?.token}`
+        }
+      });
       return {
         data: response.data,
         status: response.status
@@ -82,7 +97,12 @@ class SheetService {
    */
   async getSheetsByOwner(ownerId: string): Promise<ApiResponse<SheetForm[]>> {
     try {
-      const response = await api.sheets.get<SheetForm[]>(`/api/sheets/by-user_id/${ownerId}`);
+      const tokens = authService.getAuthTokens();
+      const response = await api.sheets.get<SheetForm[]>(`/api/sheets/by-user_id/${ownerId}`, {
+        headers: {
+          Authorization: `Bearer ${tokens?.token}`
+        }
+      });
       return {
         data: response.data,
         status: response.status
@@ -100,7 +120,12 @@ class SheetService {
    */
   async getTemplates(): Promise<ApiResponse<TemplateBasicInfo[]>> {
     try {
-      const response = await api.sheets.get<TemplateBasicInfo[]>('/api/sheets/template/');
+      const tokens = authService.getAuthTokens();
+      const response = await api.sheets.get<TemplateBasicInfo[]>('/api/sheets/template/', {
+        headers: {
+          Authorization: `Bearer ${tokens?.token}`
+        }
+      });
       return {
         data: response.data,
         status: response.status
@@ -121,9 +146,12 @@ class SheetService {
   updateData: { fields: Record<string, any> } // Garanta que está enviando a estrutura correta
 ): Promise<ApiResponse<SheetForm>> {
   try {
+    const tokens = authService.getAuthTokens();
     const response = await api.sheets.put<SheetForm>(
-      `/api/sheets/${sheetId}`,
-      { data: updateData.fields } // Envia no formato que o backend espera
+      `/api/sheets/${sheetId}`,updateData,
+      { headers: {
+          Authorization: `Bearer ${tokens?.token}`
+        }, }
     );
     return {
       data: response.data,
@@ -138,16 +166,19 @@ class SheetService {
   }
 }
 
-  /**
-   * Vincula um personagem a uma ficha
-   */
   async assignCharacter(
     sheetId: string, 
     characterId: string
   ): Promise<ApiResponse<SheetForm>> {
     try {
+      const tokens = authService.getAuthTokens();
       const response = await api.sheets.patch<SheetForm>(`/api/sheets/${sheetId}/assign-character`, {
-        character_id: characterId
+        headers: {
+          Authorization: `Bearer ${tokens?.token}`
+        },
+        data: {
+          character_id: characterId
+        }
       });
       return {
         data: response.data,
@@ -166,7 +197,12 @@ class SheetService {
    */
   async deleteSheet(sheetId: string): Promise<ApiResponse<void>> {
     try {
-      const response = await api.sheets.delete(`/api/sheets/${sheetId}`);
+      const tokens = authService.getAuthTokens();
+      const response = await api.sheets.delete(`/api/sheets/${sheetId}`, {
+        headers: {
+          Authorization: `Bearer ${tokens?.token}`
+        }
+      });
       return {
         data: response.data,
         status: response.status
