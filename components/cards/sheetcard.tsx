@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Loader2, Save, Trash2, Plus } from "lucide-react"
 import { DynamicFormRenderer } from "@/components/forms/dynamic-form-renderer"
 import { SheetForm, Template } from "@/lib/service/types"
+import { useState } from "react"
+import SheetTabs from "../mobile/sheettabs"
 
 export default function SheetCard({
   sheet,
@@ -32,6 +34,9 @@ export default function SheetCard({
   onCreateSheet: () => void
 }) {
   const isTemplateReady = template && Object.keys(template.fields || {}).length > 0
+
+  const rootTabs = Object.keys(template?.fields)   // Pega campos raiz
+  const [activeTab, setActiveTab] = useState(rootTabs[0])
 
   if (sheet && isTemplateReady) {
     return (
@@ -79,13 +84,33 @@ export default function SheetCard({
         </CardHeader>
 
         <CardContent className="overflow-x-auto">
-          <DynamicFormRenderer
-            fields={template.fields}
-            values={editableSheetData}
-            cols={template.cols || "2"}
-            onChange={setEditableSheetData}
-            status={template.status}
-          />
+            {/* MOBILE */}
+            <div className="md:hidden">
+              <SheetTabs
+                tabs={rootTabs}
+                active={activeTab}
+                setActive={setActiveTab}
+              />
+
+              <DynamicFormRenderer
+                fields={{ [activeTab]: template.fields[activeTab] }} // ← só o campo ativo
+                values={editableSheetData}
+                cols="1"
+                onChange={setEditableSheetData}
+                status={template.status}
+              />
+            </div>
+
+            {/* DESKTOP */}
+            <div className="hidden md:block">
+              <DynamicFormRenderer
+                fields={template.fields}
+                values={editableSheetData}
+                cols={template.cols || "2"}
+                onChange={setEditableSheetData}
+                status={template.status}
+              />
+            </div>
         </CardContent>
       </Card>
     )

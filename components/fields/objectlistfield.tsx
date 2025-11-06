@@ -69,15 +69,27 @@ export function ObjectListField({
   }
 
   return (
-    <div key={path} className={`space-y-2 col-span-${colSpan} row-span-${rowSpan}`}>
-      {showLabel && <Label>{capitalize(displayName)}</Label>}
+    <div key={path} className={`space-y-2 col-span-${colSpan} row-span-${rowSpan} w-full`}>
+      {showLabel && (
+        <Label className="font-semibold text-sm sm:text-base">
+          {capitalize(displayName)}
+        </Label>
+      )}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext
           items={normalizedList.map((_, i) => i.toString())}
-          strategy={rectSortingStrategy} // ← permite mover horizontal e vertical ao mesmo tempo
+          strategy={rectSortingStrategy}
         >
-          <div className={`grid gap-4 grid-cols-1 sm:grid-cols-${field.cols}`}>
+          {/* Grid ajustável */}
+          <div
+            className={`
+              grid gap-4
+              grid-cols-1
+              sm:grid-cols-2
+              md:grid-cols-${field.cols || 3}
+            `}
+          >
             {normalizedList.map((item, index) => (
               <SortableCard
                 key={index.toString()}
@@ -96,47 +108,60 @@ export function ObjectListField({
         </SortableContext>
       </DndContext>
 
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => {
-          const emptyItem = field.fields.reduce((acc: any, subField: any) => {
-            acc[subField.name] = ""
-            return acc
-          }, {})
-          updateValue(path, [...normalizedList, emptyItem])
-        }}
-      >
-        <Plus className="mr-2 h-4 w-4" />
-        Adicionar
-      </Button>
+      {/* Botão adicionar */}
+      <div className="pt-2 flex flex-col sm:flex-row gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full sm:w-auto"
+          onClick={() => {
+            const emptyItem = field.fields.reduce((acc: any, subField: any) => {
+              acc[subField.name] = ""
+              return acc
+            }, {})
+            updateValue(path, [...normalizedList, emptyItem])
+          }}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Adicionar
+        </Button>
+      </div>
     </div>
   )
 }
 
 function SortableCard({ id, item, index, field, path, normalizedList, updateValue, getValue, getAllStatus }: any) {
-  const { attributes, listeners, setNodeRef, transform, transition, isSorting } = useSortable({ id, transition: {
-    duration: 150,
-    easing: 'ease-out',
-  }})
+  const { attributes, listeners, setNodeRef, transform, transition, isSorting } = useSortable({
+    id,
+    transition: {
+      duration: 150,
+      easing: "ease-out",
+    },
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition: isSorting ? transition : undefined, 
+    transition: isSorting ? transition : undefined,
     zIndex: isSorting ? 999 : "auto",
   }
 
   return (
-    <Card ref={setNodeRef} style={style} className="border p-4 relative cursor-default">
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className="border p-4 relative cursor-default w-full shadow-sm"
+    >
+      {/* Ícone de drag */}
       <div
         {...attributes}
         {...listeners}
         className="absolute top-2 left-2 p-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
       >
-        <GripVertical className="h-4 w-4 mb-3 text-gray-400 cursor-grab" />
+        <GripVertical className="h-4 md:w-4 mb-3 text-gray-400 cursor-grab" />
       </div>
 
+      {/* Botão remover */}
       <Button
         type="button"
         variant="ghost"
@@ -151,11 +176,12 @@ function SortableCard({ id, item, index, field, path, normalizedList, updateValu
         <X className="h-4 w-4" />
       </Button>
 
-      <div className="grid gap-4 md:grid-cols-2 mt-6">
+      {/* Conteúdo do card */}
+      <div className="grid gap-4 grid-cols-2 mt-6 w-full">
         {field.fields.map((subField: any) => (
-          <div key={subField.name} className={`col-span-${subField.span}`}>
+          <div key={subField.name} className={`col-span-${subField.span || 1}`}>
             <Label className="text-xs mb-1">{capitalize(subField.name)}</Label>
-            
+
             {subField.type === "string" ? (
               <Input
                 value={item[subField.name]}
@@ -176,9 +202,7 @@ function SortableCard({ id, item, index, field, path, normalizedList, updateValu
                   updateValue(path, newList)
                 }}
               />
-            )
-          
-             : subField.type === "statuscusto" ? (
+            ) : subField.type === "statuscusto" ? (
               <StatusCustoField
                 path={path}
                 index={index}
@@ -190,8 +214,7 @@ function SortableCard({ id, item, index, field, path, normalizedList, updateValu
                 showLabel={false}
                 getAllStatus={getAllStatus}
               />
-            ) : null
-            }
+            ) : null}
           </div>
         ))}
       </div>

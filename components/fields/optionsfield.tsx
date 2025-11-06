@@ -33,23 +33,22 @@ export default function OptionsEditor({
   }
 
   return (
-    <div className="col-span-2 space-y-2">
-      {fieldType === "string" ? (
-        <Label>Opções</Label>
-      ) : (
-        <Label>Colunas da Lista</Label>
-      )}
+    <div className="col-span-2 space-y-3 w-full">
+      <Label className="text-sm sm:text-base font-semibold">
+        {fieldType === "string" ? "Opções" : "Colunas da Lista"}
+      </Label>
 
+      {/* Chips responsivos */}
       <div className="flex flex-wrap gap-2">
         {(Array.isArray(field.options) ? field.options : []).map((opt, index) => (
           <div
             key={index}
-            className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-1 rounded-md"
+            className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm sm:text-base"
           >
-            <span>{opt}</span>
+            <span className="truncate max-w-[150px] sm:max-w-none">{opt}</span>
             <button
               type="button"
-              className="text-sm hover:text-destructive"
+              className="text-sm hover:text-destructive transition-colors"
               onClick={() => handleRemoveOption(index)}
             >
               ✕
@@ -58,7 +57,8 @@ export default function OptionsEditor({
         ))}
       </div>
 
-      <div className="flex gap-2">
+      {/* Campo + botão responsivo */}
+      <div className="flex flex-col sm:flex-row gap-2 w-full">
         <Input
           placeholder="Adicionar nova opção"
           value={newOption}
@@ -69,8 +69,13 @@ export default function OptionsEditor({
               handleAddOption()
             }
           }}
+          className="w-full sm:flex-1"
         />
-        <Button type="button" onClick={handleAddOption}>
+        <Button
+          type="button"
+          onClick={handleAddOption}
+          className="w-full sm:w-auto"
+        >
           Adicionar
         </Button>
       </div>

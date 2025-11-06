@@ -102,6 +102,7 @@ export function DynamicFormRenderer({ fields, values, cols, onChange, status }: 
     ).join(' ')
   };
 
+  const tabs = []
 
   const renderField = (key: string, field: FieldDefinition, parentPath = "", isNested = false) => {
     const fieldName = field.name || key;
@@ -116,6 +117,10 @@ export function DynamicFormRenderer({ fields, values, cols, onChange, status }: 
     const rowSpan = field.rows || "1";
     const color = field.color || "red";
     const showLabel = field.show_label;
+
+    if(!isNested) {
+      tabs.push(path);
+    }
 
     switch (field.type) {
       case "string":

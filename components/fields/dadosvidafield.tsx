@@ -21,7 +21,7 @@ function DadovidaField({ path, field, getValue, updateValue, cols }: {
   }
 
   return (
-    <div key={path} className={`grid w-full gap-4 justify-self-center justify-items-center items-center grid-cols-${cols} border rounded-md p-8 pl-16 pr-16`}>
+    <div key={path} className={`grid w-full gap-4 justify-self-center justify-items-center items-center grid-cols-${cols} border rounded-md sm:p-8 sm:pl-16 sm:pr-16`}>
       <h1 className="col-span-4 text-lg mb-2">Dados de Vida</h1>
       {colorCircles}
     </div>

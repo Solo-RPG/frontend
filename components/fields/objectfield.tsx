@@ -31,14 +31,21 @@ export function ObjectField({
   const className = `md:grid-${flex}-${cols}`
 
   return (
-    <Card className={`border mt-4 items-center col-span-${colSpan} row-span-${rowSpan}`}>
-      <CardHeader>
-        <CardTitle className="text-lg">
-          {showLabel && <Label className="text-1xl">{capitalize(displayName)}</Label>}
-        </CardTitle>
+    <Card
+      className={`border mt-4 col-span-${colSpan} row-span-${rowSpan} w-full shadow-sm`}
+    >
+      <CardHeader className="pb-2">
+        {showLabel && (
+          <CardTitle className="text-base sm:text-lg font-semibold">
+            <Label className="text-sm sm:text-base">
+              {capitalize(displayName)}
+            </Label>
+          </CardTitle>
+        )}
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className={`grid gap-4 ${className} overflow-auto`}>
+
+      <CardContent className="space-y-4 w-full">
+        <div className={`grid md:gap-4 ${className} overflow-auto`}>
           {Object.entries(field.fields).map(([subKey, subField]) =>
             renderField(subKey, subField, path)
           )}
