@@ -4,21 +4,21 @@ import { authService } from './service/auth-service';
 const BASE_URL = 'http://54.232.64.32';
 
 const api_templates = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: "http://54.232.64.32",
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 const api_sheets = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: "http://54.232.64.32",
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 const api_characters = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: "http://54.232.64.32",
   headers: {
     'Content-Type': 'application/json',
   },
